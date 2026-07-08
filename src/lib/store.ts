@@ -8,7 +8,11 @@ import path from "path";
 import type { ProgressStore, ReviewCard, SessionRecord, StreakState } from "./types";
 import { createCard, gradeResponse } from "./sm2";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+// Vercel serverless has read-only filesystem except /tmp
+const IS_VERCEL = Boolean(process.env.VERCEL);
+const DATA_DIR = IS_VERCEL
+  ? "/tmp/data"
+  : path.join(process.cwd(), "data");
 const STORE_PATH = path.join(DATA_DIR, "progress.json");
 
 // ---------------------------------------------------------------------------
@@ -30,8 +34,14 @@ export function getStore(): ProgressStore {
 }
 
 export function saveStore(store: ProgressStore): void {
-  ensureDataDir();
-  fs.writeFileSync(STORE_PATH, JSON.stringify(store, null, 2), "utf-8");
+  try {
+    ensureDataDir();
+    fs.writeFileSync(STORE_PATH, JSON.stringify(store, null, 2), "utf-8");
+  } catch {
+    // On serverless platforms, writes may fail. Store is kept in memory
+    // for the duration of the function invocation.
+    console.warn("Could not persist progress store (serverless environment)");
+  }
 }
 
 function createEmptyStore(): ProgressStore {
@@ -51,8 +61,12 @@ function createEmptyStore(): ProgressStore {
 }
 
 function ensureDataDir(): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+  } catch {
+    // Read-only filesystem (e.g. Vercel) — data dir creation skipped
   }
 }
 

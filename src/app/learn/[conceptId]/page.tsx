@@ -60,7 +60,12 @@ export default function LearnConceptPage({ params }: PageProps) {
       const res = await fetch("/api/grade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conceptId, grade: g }),
+        body: JSON.stringify({
+          conceptId,
+          grade: g,
+          title: concept?.title ?? conceptId,
+          difficulty: concept?.difficulty ?? 3,
+        }),
       });
       const data = await res.json();
 
