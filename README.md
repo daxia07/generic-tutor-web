@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tutor Web — Duolingo-Style System Design Learning
 
-## Getting Started
+A gamified web app for learning system design interview concepts using SM-2 spaced repetition. Content sourced from [generic-tutor](https://github.com/ding/generic-tutor) markdown files.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router) + TypeScript
+- **Tailwind CSS** + shadcn/ui
+- **SM-2 algorithm** — same as generic-tutor, ported to pure TypeScript
+- **JSON file store** — single-user progress, no database needed
+- **gray-matter** — markdown frontmatter parsing
+
+## Quick Start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── layout.tsx              # Root layout with nav
+│   ├── page.tsx                # Dashboard (streaks, XP, due concepts)
+│   ├── learn/
+│   │   ├── page.tsx            # All concepts list
+│   │   └── [conceptId]/page.tsx  # Learning session (content + grading)
+│   ├── review/page.tsx         # Due concepts for review
+│   └── api/
+│       ├── progress/route.ts   # GET progress summary
+│       ├── grade/route.ts      # POST grade a concept
+│       └── concept/[conceptId]/route.ts  # GET concept + card
+├── lib/
+│   ├── sm2.ts                  # SM-2 algorithm (pure functions)
+│   ├── content.ts              # Markdown loader + parser
+│   ├── store.ts                # JSON progress store
+│   └── types.ts                # Shared TypeScript types
+└── components/ui/              # shadcn/ui components
+content/system-design/          # 25 concept markdown files
+data/progress.json              # Learner progress (gitignored)
+```
 
-## Learn More
+## How It Works
 
-To learn more about Next.js, take a look at the following resources:
+1. **Dashboard** shows streaks, XP, mastered concepts, and due reviews
+2. **Learn** page lists all concepts sorted by progress
+3. Click a concept → read definition, key terms, interview questions, gotchas
+4. **Self-grade** (0-5) → SM-2 algorithm schedules next review
+5. **Review** page shows concepts due today with streak calendar
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Adding Content
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Drop markdown files in `content/system-design/`. Each file needs:
 
-## Deploy on Vercel
+```markdown
+# Concept Title
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Definition
+The definition text...
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Key Terms
+- **Term**: Definition
+
+## Why It Matters
+Why this matters for interviews...
+
+## Interview Questions
+1. Question one?
+2. Question two?
+
+## Gotchas
+- Common mistake one
+- Common mistake two
+```
+
+## Deployment
+
+```bash
+npm run build
+npm start
+```
+
+Deploy to Vercel with zero configuration — the JSON store writes to the filesystem, so for multi-instance deployments, swap `store.ts` for a database adapter.
