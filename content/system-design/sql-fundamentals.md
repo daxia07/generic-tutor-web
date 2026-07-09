@@ -217,3 +217,37 @@ Based on Reddit/Glassdoor:
 | LIMIT | Cap results | `LIMIT 10` |
 | DISTINCT | Unique values | `SELECT DISTINCT currency` |
 | UNION | Combine results | `SELECT ... UNION SELECT ...` |
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "Which SQL clause filters rows BEFORE grouping?"
+options:
+  - A: WHERE
+  - B: HAVING
+  - C: GROUP BY
+  - D: ORDER BY
+correct: A
+explanation: "WHERE filters before GROUP BY. HAVING filters after grouping."
+difficulty: 1
+
+### Q2
+type: fill-in-blank
+stem: "The SQL ______ clause filters groups after the GROUP BY clause."
+answers:
+  - "HAVING"
+explanation: "HAVING is like WHERE but operates on grouped/aggregated results."
+difficulty: 1
+
+### Q3
+type: order
+stem: "Order the SQL query execution sequence:"
+items:
+  - "FROM"
+  - "WHERE"
+  - "GROUP BY"
+  - "SELECT"
+correct_order: [0, 1, 2, 3]
+explanation: "SQL executes: FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT."
+difficulty: 2

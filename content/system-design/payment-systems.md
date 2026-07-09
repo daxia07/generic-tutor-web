@@ -168,3 +168,41 @@ Total debits = Total credits (always balanced)
 | Settlement | Actual money transfer | T+1/T+2 delays |
 | Event Sourcing | Store events not state | Compliance, debugging |
 | CQRS | Separate read/write | Scale, optimize each path |
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "What is idempotency in the context of payment systems?"
+options:
+  - A: Processing payments faster
+  - B: Ensuring duplicate requests produce the same result
+  - C: Encrypting payment data
+  - D: Load balancing
+correct: B
+explanation: "Idempotency ensures that retrying a payment request (e.g., due to timeout) doesn't charge the customer twice."
+difficulty: 2
+
+### Q2
+type: fill-in-blank
+stem: "A ______ ledger records every financial transaction as an immutable entry."
+answers:
+  - "double-entry"
+  - "double entry"
+explanation: "Double-entry bookkeeping records each transaction as both a debit and credit, ensuring balances always match."
+difficulty: 2
+
+### Q3
+type: select-all
+stem: "Which are critical requirements for payment systems?"
+options:
+  - A: Idempotency
+  - B: Auditability
+  - C: Strong consistency
+  - D: Eventual consistency
+correct:
+  - A
+  - B
+  - C
+explanation: "Payment systems need idempotency (no double charges), auditability (transaction logs), and strong consistency (accurate balances). Eventual consistency is insufficient for money."
+difficulty: 2

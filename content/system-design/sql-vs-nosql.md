@@ -28,3 +28,41 @@ This is a foundational interview question. The right answer is "it depends" — 
 - Choosing NoSQL because "it's trendy" without analyzing data model is a red flag.
 - Forgetting that NoSQL often means giving up joins — denormalization is required.
 - Polyglot persistence is powerful but adds operational complexity.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "Which type of database is typically better for unstructured or semi-structured data?"
+options:
+  - A: Relational (SQL)
+  - B: NoSQL
+  - C: Both equally
+  - D: Neither
+correct: B
+explanation: "NoSQL databases (document, key-value, graph) handle unstructured/semi-structured data more naturally than fixed-schema SQL databases."
+difficulty: 1
+
+### Q2
+type: select-all
+stem: "Which are types of NoSQL databases?"
+options:
+  - A: Document stores
+  - B: Key-value stores
+  - C: Column-family stores
+  - D: Graph databases
+correct:
+  - A
+  - B
+  - C
+  - D
+explanation: "All four are NoSQL database types: Document (MongoDB), Key-value (Redis), Column-family (Cassandra), Graph (Neo4j)."
+difficulty: 2
+
+### Q3
+type: fill-in-blank
+stem: "SQL databases enforce a fixed ______ that defines the structure of data in tables."
+answers:
+  - "schema"
+explanation: "SQL databases require a predefined schema (table structure). NoSQL databases are typically schema-flexible."
+difficulty: 1

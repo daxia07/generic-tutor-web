@@ -28,3 +28,41 @@ API Gateways are the front door of microservice architectures. They centralize c
 - BFF pattern adds complexity but improves client experience — worth it for mobile/web split.
 - Gateway adds latency — keep it thin. Heavy transformation slows everything down.
 - API versioning strategy matters: URL path (/v1/) vs header vs query param — each has trade-offs.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "Which is NOT a typical responsibility of an API gateway?"
+options:
+  - A: Rate limiting
+  - B: Request routing
+  - C: Business logic
+  - D: Authentication
+correct: C
+explanation: "API gateways handle cross-cutting concerns like routing, auth, and rate limiting. Business logic belongs in backend services."
+difficulty: 1
+
+### Q2
+type: select-all
+stem: "Which are common API gateway features?"
+options:
+  - A: SSL termination
+  - B: Request transformation
+  - C: Circuit breaking
+  - D: Data persistence
+correct:
+  - A
+  - B
+  - C
+explanation: "API gateways handle SSL termination, request/response transformation, and circuit breaking. Data persistence is not a gateway concern."
+difficulty: 2
+
+### Q3
+type: fill-in-blank
+stem: "The pattern where a single API endpoint handles requests for multiple microservices is called the ______ gateway pattern."
+answers:
+  - "API"
+  - "api"
+explanation: "An API gateway provides a single entry point for all microservice requests."
+difficulty: 1

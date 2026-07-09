@@ -11,13 +11,11 @@ import {
   HelpCircle,
   BookOpen,
   Zap,
-  Flame,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Concept, ReviewCard } from "@/lib/types";
 
 interface PageProps {
@@ -57,7 +55,7 @@ export default function LearnConceptPage({ params }: PageProps) {
     setSubmitted(true);
 
     try {
-      const res = await fetch("/api/grade", {
+      const res = await fetch("/api/grade-concept", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -359,10 +357,10 @@ export default function LearnConceptPage({ params }: PageProps) {
                 Back to Learn
               </Button>
               <Button
-                onClick={() => router.push("/review")}
+                onClick={() => router.push("/session/new")}
                 className="bg-[#58cc02] hover:bg-[#46a302] text-white font-bold"
               >
-                Continue Reviewing
+                Start Session
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </div>

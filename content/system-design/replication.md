@@ -29,3 +29,40 @@ Replication is fundamental to high availability. Every production database uses 
 - Reading from replicas immediately after writing can return stale data (read-after-write inconsistency).
 - Replication doesn't help with write scaling (in leader-follower setup) — only reads.
 - Failover isn't instant — there's always a brief unavailability window.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "Which replication strategy provides the strongest consistency guarantee?"
+options:
+  - A: Asynchronous replication
+  - B: Synchronous replication
+  - C: Semi-synchronous
+  - D: Eventual consistency
+correct: B
+explanation: "Synchronous replication waits for all replicas to confirm the write before acknowledging, providing strong consistency."
+difficulty: 1
+
+### Q2
+type: fill-in-blank
+stem: "The delay between a write on the primary and its propagation to a replica is called replication ______."
+answers:
+  - "lag"
+explanation: "Replication lag is the time difference between primary and replica data states."
+difficulty: 2
+
+### Q3
+type: select-all
+stem: "Which are valid replication topologies?"
+options:
+  - A: Single-leader
+  - B: Multi-leader
+  - C: Leaderless
+  - D: No-leader
+correct:
+  - A
+  - B
+  - C
+explanation: "Single-leader, multi-leader, and leaderless (peer-to-peer) are the three main replication topologies."
+difficulty: 2

@@ -117,3 +117,60 @@ export function getNextToLearn(
     .filter((id) => !existingCards[id])
     .slice(0, limit);
 }
+
+// ---------------------------------------------------------------------------
+// Duolingo-style grading — map question correctness to SM-2 grades
+// ---------------------------------------------------------------------------
+
+/**
+ * Map question correctness to an SM-2 grade.
+ * - Correct on first try → grade 5
+ * - Partially correct → grade 3
+ * - Incorrect → grade 1
+ */
+export function gradeFromCorrectness(isCorrect: boolean, isPartial: boolean = false): number {
+  if (isCorrect) return 5;
+  if (isPartial) return 3;
+  return 1;
+}
+
+/**
+ * Compute the next SM-2 state from current values and a grade.
+ * Returns the updated fields (does not require a ReviewCard).
+ */
+export function computeNextSm2(
+  currentEf: number,
+  currentInterval: number,
+  currentReps: number,
+  grade: number
+): { ef: number; interval: number; repetitions: number; nextReview: string; status: string } {
+  const clampedGrade = Math.max(0, Math.min(5, grade));
+  const now = new Date();
+
+  if (clampedGrade < 3) {
+    // Failed — reset
+    const newEf = Math.max(1.3, Math.round((currentEf - 0.2) * 100) / 100);
+    return {
+      ef: newEf,
+      interval: 1,
+      repetitions: 0,
+      nextReview: addDays(now, 1).toISOString(),
+      status: "learning",
+    };
+  }
+
+  // Passed — advance
+  const newEf = easeFactor(currentEf, clampedGrade);
+  const newReps = currentReps + 1;
+  const newInterval = nextInterval(newReps, currentInterval, newEf);
+  const nextDate = addDays(now, newInterval);
+  const isMastered = newEf >= 2.5 && newInterval >= 21;
+
+  return {
+    ef: newEf,
+    interval: newInterval,
+    repetitions: newReps,
+    nextReview: nextDate.toISOString(),
+    status: isMastered ? "mastered" : newReps >= 3 ? "reviewing" : "learning",
+  };
+}

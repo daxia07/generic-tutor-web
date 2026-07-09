@@ -28,3 +28,38 @@ Almost every system design involves storing files somewhere. Blob storage is the
 - Pre-signed URLs are the secure way to give clients direct upload/download access.
 - Consistency: S3 is now strongly consistent (since Dec 2020) but some services still aren't.
 - Don't use blob storage as a database — it's optimized for large objects, not small frequent reads.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "Which access tier in cloud blob storage is cheapest for long-term archival?"
+options:
+  - A: Hot
+  - B: Cool
+  - C: Archive
+  - D: Premium
+correct: C
+explanation: "Archive tier has the lowest storage cost but highest retrieval cost and latency (hours to access)."
+difficulty: 1
+
+### Q2
+type: fill-in-blank
+stem: "Amazon S3 provides ______ durability by replicating data across multiple facilities."
+answers:
+  - "99.999999999"
+  - "11 nines"
+explanation: "S3 provides 99.999999999% (11 nines) durability by storing data redundantly across multiple Availability Zones."
+difficulty: 2
+
+### Q3
+type: multiple-choice
+stem: "What is the maximum size of a single object in Amazon S3?"
+options:
+  - A: 1 GB
+  - B: 5 GB
+  - C: 5 TB
+  - D: Unlimited
+correct: C
+explanation: "A single S3 object can be up to 5 TB. Larger uploads must use multipart upload."
+difficulty: 2

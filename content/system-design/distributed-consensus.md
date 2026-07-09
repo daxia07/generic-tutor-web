@@ -28,3 +28,39 @@ Consensus underpins critical infrastructure: ZooKeeper for coordination, etcd fo
 - Quorum size: need (N/2 + 1) nodes available. 3-node cluster tolerates 1 failure, 5 tolerates 2.
 - Consensus is expensive — don't use it for every operation, only for coordination.
 - Network partitions can cause temporary unavailability — that's the CAP trade-off.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "Which consensus algorithm is used by etcd and ZooKeeper?"
+options:
+  - A: Paxos
+  - B: Raft
+  - C: Two-phase commit
+  - D: Gossip
+correct: B
+explanation: "etcd uses Raft. ZooKeeper uses ZAB (which is Raft-like). Paxos is used by Google's Chubby."
+difficulty: 2
+
+### Q2
+type: fill-in-blank
+stem: "In the Raft algorithm, a node must receive votes from a ______ of nodes to become leader."
+answers:
+  - "majority"
+  - "quorum"
+  - "majority (quorum)"
+explanation: "Raft requires a majority (quorum) of nodes to elect a leader, ensuring at most one leader per term."
+difficulty: 2
+
+### Q3
+type: multiple-choice
+stem: "What problem does distributed consensus solve?"
+options:
+  - A: Load balancing
+  - B: Agreeing on a value across distributed nodes
+  - C: Caching
+  - D: Rate limiting
+correct: B
+explanation: "Distributed consensus ensures all nodes agree on the same data/value, critical for consistency in distributed systems."
+difficulty: 1

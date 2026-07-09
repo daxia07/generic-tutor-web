@@ -29,3 +29,37 @@ CDNs are essential for any system serving static content (images, CSS, JS, video
 - CDN costs can spike with high traffic — monitor and set budget alerts.
 - Cold start: first request to a new edge location hits origin (slow) — pre-warming helps.
 - HTTPS/TLS termination at the edge is standard now — don't skip it.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "What is the primary purpose of a Content Delivery Network (CDN)?"
+options:
+  - A: Database replication
+  - B: Reduce latency by serving content from edge locations
+  - C: Message queuing
+  - D: API gateway
+correct: B
+explanation: "CDNs serve content from geographically distributed edge servers, reducing latency for end users."
+difficulty: 1
+
+### Q2
+type: fill-in-blank
+stem: "CDN servers located closer to end users are called ______ servers."
+answers:
+  - "edge"
+explanation: "Edge servers are CDN nodes positioned close to users for low-latency content delivery."
+difficulty: 1
+
+### Q3
+type: multiple-choice
+stem: "Which type of content benefits MOST from CDN caching?"
+options:
+  - A: Real-time chat messages
+  - B: Static assets (images, CSS, JS)
+  - C: Database writes
+  - D: WebSocket connections
+correct: B
+explanation: "Static assets are cacheable and benefit most from CDN edge caching. Dynamic content like chat requires real-time delivery."
+difficulty: 1

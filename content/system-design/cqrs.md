@@ -27,3 +27,40 @@ CQRS is powerful when read and write patterns are very different (most systems).
 - Without event sourcing, CQRS is simpler but loses audit trail benefits.
 - Don't apply CQRS everywhere — it's overkill for simple CRUD applications.
 - Debugging is harder when read and write are separate — need correlation IDs and tracing.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "What does CQRS stand for?"
+options:
+  - A: Central Query and Response System
+  - B: Command Query Responsibility Segregation
+  - C: Consistent Query Replication Service
+  - D: Cache Query Routing Strategy
+correct: B
+explanation: "CQRS = Command Query Responsibility Segregation — separating read and write models."
+difficulty: 1
+
+### Q2
+type: fill-in-blank
+stem: "In CQRS, the ______ model handles creating and updating data, while the query model handles reads."
+answers:
+  - "command"
+explanation: "Commands handle writes (create/update/delete). Queries handle reads. They use separate models."
+difficulty: 2
+
+### Q3
+type: select-all
+stem: "Which are benefits of CQRS?"
+options:
+  - A: Independent scaling of reads and writes
+  - B: Optimized read models
+  - C: Simpler system design
+  - D: Eventual consistency support
+correct:
+  - A
+  - B
+  - D
+explanation: "CQRS enables independent scaling, optimized reads, and eventual consistency. It actually adds complexity, not simplifies."
+difficulty: 2

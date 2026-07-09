@@ -29,3 +29,40 @@ Event-driven architecture is the foundation of modern microservice systems. It e
 - Orchestration is clearer but adds a single point of failure/coordination.
 - Event schema changes (versioning) are a real operational challenge — plan for it.
 - Don't use events for operations that need immediate consistency — use direct API calls.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "In event-driven architecture, what is an event?"
+options:
+  - A: A database query
+  - B: A significant change in state that has occurred
+  - C: An API call
+  - D: A log entry
+correct: B
+explanation: "An event represents something that happened (a state change). Consumers react to events asynchronously."
+difficulty: 1
+
+### Q2
+type: select-all
+stem: "Which are common event routing patterns?"
+options:
+  - A: Event notification
+  - B: Event-carried state transfer
+  - C: Event sourcing
+  - D: CQRS
+correct:
+  - A
+  - B
+  - C
+explanation: "Event notification, event-carried state transfer, and event sourcing are event routing patterns. CQRS is a related but separate pattern."
+difficulty: 3
+
+### Q3
+type: fill-in-blank
+stem: "The pattern where all changes to application state are stored as a sequence of events is called event ______."
+answers:
+  - "sourcing"
+explanation: "Event sourcing persists all state changes as immutable events, enabling complete state reconstruction."
+difficulty: 2

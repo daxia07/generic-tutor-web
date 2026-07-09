@@ -28,3 +28,40 @@ Rate limiting is a security and reliability requirement for any public API. Inte
 - Rate limiting by IP is problematic behind NAT/VPN — many users share one IP.
 - Need graceful degradation — return 429 with helpful headers, don't just drop connections.
 - Consider different limits for different endpoints (read vs write, cheap vs expensive).
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "Which rate limiting algorithm uses a sliding time window to provide smoother rate control?"
+options:
+  - A: Fixed window counter
+  - B: Sliding window log
+  - C: Token bucket
+  - D: Leaky bucket
+correct: B
+explanation: "Sliding window log tracks timestamps of each request and counts within a sliding window, providing smooth rate control."
+difficulty: 2
+
+### Q2
+type: fill-in-blank
+stem: "The ______ bucket rate limiting algorithm adds tokens at a fixed rate and allows a burst up to the bucket capacity."
+answers:
+  - "token"
+explanation: "Token bucket allows bursts up to bucket capacity while maintaining a long-term rate limit."
+difficulty: 2
+
+### Q3
+type: select-all
+stem: "Which are common rate limiting strategies?"
+options:
+  - A: Token bucket
+  - B: Leaky bucket
+  - C: Fixed window
+  - D: Random drop
+correct:
+  - A
+  - B
+  - C
+explanation: "Token bucket, leaky bucket, and fixed window are all standard rate limiting algorithms. Random drop is not."
+difficulty: 2

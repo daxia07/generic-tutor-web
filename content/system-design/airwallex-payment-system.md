@@ -211,3 +211,41 @@ Trace: txn_123
 3. **Call out trade-offs** — Consistency vs availability, latency vs durability
 4. **Mention Airwallex context** — Cross-border, multi-currency, high volume
 5. **Discuss failure modes** — What breaks and how to handle it
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "In a payment system, what is the purpose of a ledger?"
+options:
+  - A: Cache payment data
+  - B: Record all financial transactions immutably
+  - C: Route API requests
+  - D: Encrypt card data
+correct: B
+explanation: "A ledger is an immutable record of all financial transactions, serving as the source of truth for account balances."
+difficulty: 1
+
+### Q2
+type: fill-in-blank
+stem: "A ______ key in a payment API ensures that retrying a request doesn't create a duplicate charge."
+answers:
+  - "idempotency"
+explanation: "Idempotency keys allow the server to recognize and deduplicate retried requests."
+difficulty: 2
+
+### Q3
+type: select-all
+stem: "Which are important considerations for cross-border payment systems?"
+options:
+  - A: Currency conversion
+  - B: Regulatory compliance
+  - C: Settlement timing
+  - D: Local payment methods
+correct:
+  - A
+  - B
+  - C
+  - D
+explanation: "Cross-border payments must handle FX rates, regulations (KYC/AML), settlement delays, and local payment method preferences."
+difficulty: 2

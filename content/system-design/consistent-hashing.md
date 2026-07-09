@@ -23,3 +23,38 @@ Any system that distributes data across nodes (databases, caches, CDNs) needs a 
 - Without virtual nodes, distribution is uneven — some servers get much more load.
 - Consistent hashing doesn't solve the "how many vnodes" question — too few = imbalance, too many = memory overhead.
 - Implementation details matter in interviews — know the ring lookup algorithm (binary search).
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "What data structure does consistent hashing typically use to minimize data movement when nodes are added?"
+options:
+  - A: Binary tree
+  - B: Hash ring
+  - C: B-tree
+  - D: Linked list
+correct: B
+explanation: "Consistent hashing places nodes and keys on a circular hash ring, so adding/removing nodes only affects adjacent keys."
+difficulty: 2
+
+### Q2
+type: fill-in-blank
+stem: "Virtual nodes (______) in consistent hashing help distribute load more evenly across physical nodes."
+answers:
+  - "VNodes"
+  - "vnodes"
+explanation: "VNodes are virtual points on the hash ring assigned to physical nodes, improving load distribution."
+difficulty: 3
+
+### Q3
+type: multiple-choice
+stem: "In consistent hashing, when a node is removed, its data is redistributed to which node(s)?"
+options:
+  - A: All nodes equally
+  - B: The next node clockwise on the ring
+  - C: A random node
+  - D: The primary replica
+correct: B
+explanation: "When a node leaves, its data moves to the next node clockwise on the hash ring."
+difficulty: 2

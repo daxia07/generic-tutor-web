@@ -1,4 +1,6 @@
-import { getStore, getDueCards } from "@/lib/store";
+import { db } from "@/lib/db/index";
+import { concepts, streaks } from "@/lib/db/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { loadAllConcepts } from "@/lib/content";
 import Link from "next/link";
 import { Clock, ArrowRight, Flame, CheckCircle2 } from "lucide-react";
@@ -8,30 +10,35 @@ import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
-export default function ReviewPage() {
-  const store = getStore();
-  const concepts = loadAllConcepts();
-  const dueCards = getDueCards(store);
+export default async function ReviewPage() {
+  const topicId = "system-design";
+  const today = new Date().toISOString().split("T")[0];
 
-  // Enrich due cards with concept data
-  const enriched = dueCards.map((card) => {
-    const concept = concepts.find((c) => c.id === card.conceptId);
-    return {
-      ...card,
-      conceptTitle: concept?.title || card.conceptId,
-      conceptDifficulty: concept?.difficulty || 3,
-    };
-  });
+  // Fetch due concepts from Turso
+  const dueConcepts = await db
+    .select()
+    .from(concepts)
+    .where(
+      and(
+        eq(concepts.topicId, topicId),
+        sql`(${concepts.status} IN ('learning', 'reviewing') AND (${concepts.nextReview} IS NULL OR ${concepts.nextReview} <= ${today}))`
+      )
+    );
 
-  // Group: unseen first, then by reps
-  const newCards = enriched.filter((c) => c.reps === 0);
-  const reviewCards = enriched.filter((c) => c.reps > 0);
+  // Fetch streak from Turso
+  const streakRows = await db.select().from(streaks).limit(1);
+  const streak = streakRows[0];
+
+  // Split into new (unseen but due) and review
+  const reviewCards = dueConcepts;
 
   // Streak calendar - last 14 days
-  const streakDays = store.streak.streakHistory;
-  const today = new Date();
+  const streakDays: string[] = streak
+    ? JSON.parse(streak.streakHistory || "[]")
+    : [];
+  const todayDate = new Date();
   const last14Days = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(today);
+    const d = new Date(todayDate);
     d.setDate(d.getDate() - (13 - i));
     return d.toISOString().split("T")[0];
   });
@@ -42,13 +49,13 @@ export default function ReviewPage() {
         <div>
           <h1 className="text-2xl font-bold text-[#4b4b4b]">Review</h1>
           <p className="text-muted-foreground">
-            {enriched.length} concept{enriched.length !== 1 ? "s" : ""} due today
+            {reviewCards.length} concept{reviewCards.length !== 1 ? "s" : ""} due today
           </p>
         </div>
         <div className="flex items-center gap-1.5 bg-[#fff5e6] rounded-lg px-3 py-2">
           <Flame className="w-5 h-5 text-[#ff9600]" />
           <span className="font-bold text-[#ff9600] text-lg">
-            {store.streak.currentStreak}
+            {streak?.current ?? 0}
           </span>
           <span className="text-xs text-[#ff9600]/70">day streak</span>
         </div>
@@ -63,7 +70,7 @@ export default function ReviewPage() {
           <div className="flex gap-1.5">
             {last14Days.map((date) => {
               const studied = streakDays.includes(date);
-              const isToday = date === today.toISOString().split("T")[0];
+              const isToday = date === todayDate.toISOString().split("T")[0];
               const dayName = new Date(date + "T00:00:00")
                 .toLocaleDateString("en-US", { weekday: "short" })
                 .charAt(0);
@@ -86,7 +93,7 @@ export default function ReviewPage() {
         </CardContent>
       </Card>
 
-      {enriched.length === 0 ? (
+      {reviewCards.length === 0 ? (
         <Card className="border-[#e5e5e5]">
           <CardContent className="p-12 text-center">
             <CheckCircle2 className="w-16 h-16 mx-auto mb-4 text-[#58cc02]" />
@@ -97,7 +104,7 @@ export default function ReviewPage() {
               No concepts are due for review. Your spaced repetition is on
               track.
             </p>
-            <Link href="/learn">
+            <Link href="/session/new">
               <Button className="bg-[#1cb0f6] hover:bg-[#1899d6] text-white font-bold">
                 Learn Something New
               </Button>
@@ -115,81 +122,43 @@ export default function ReviewPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {newCards.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-xs font-semibold text-[#1cb0f6] uppercase tracking-wide mb-2">
-                    New ({newCards.length})
-                  </p>
-                  {newCards.map((card) => (
-                    <Link
-                      key={card.conceptId}
-                      href={`/learn/${card.conceptId}`}
-                      className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#f0f9ff] transition-colors group"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-[#ddf4ff] flex items-center justify-center flex-shrink-0">
-                        <Clock className="w-4 h-4 text-[#1cb0f6]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">
-                          {card.conceptTitle}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Difficulty: {card.conceptDifficulty}/5
-                        </p>
-                      </div>
-                      <Badge className="bg-[#1cb0f6] text-xs">New</Badge>
-                      <ArrowRight className="w-4 h-4 text-[#afafaf] opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </Link>
-                  ))}
-                </div>
-              )}
-
-              {reviewCards.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-[#ff9600] uppercase tracking-wide mb-2">
-                    Review ({reviewCards.length})
-                  </p>
-                  {reviewCards.map((card) => (
-                    <Link
-                      key={card.conceptId}
-                      href={`/learn/${card.conceptId}`}
-                      className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#fff8f0] transition-colors group"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-[#fff0e0] flex items-center justify-center flex-shrink-0">
-                        <Flame className="w-4 h-4 text-[#ff9600]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">
-                          {card.conceptTitle}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {card.reps} reps · {card.interval}d interval · EF{" "}
-                          {card.ef}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {card.interval}d
-                      </Badge>
-                      <ArrowRight className="w-4 h-4 text-[#afafaf] opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </Link>
-                  ))}
-                </div>
-              )}
+              <div>
+                <p className="text-xs font-semibold text-[#ff9600] uppercase tracking-wide mb-2">
+                  Review ({reviewCards.length})
+                </p>
+                {reviewCards.map((concept) => (
+                  <Link
+                    key={concept.id}
+                    href={`/learn/${concept.id}`}
+                    className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#fff8f0] transition-colors group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[#fff0e0] flex items-center justify-center flex-shrink-0">
+                      <Flame className="w-4 h-4 text-[#ff9600]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{concept.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {concept.repetitions} reps · {concept.interval}d
+                        interval · EF {concept.ef}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {concept.interval}d
+                    </Badge>
+                    <ArrowRight className="w-4 h-4 text-[#afafaf] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
-          {/* Start review button */}
-          {enriched.length > 0 && enriched[0] && (
-            <Link
-              href={`/learn/${enriched[0].conceptId}`}
-              className="block"
-            >
-              <button className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-4 px-4 text-base transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]">
-                Start Review Session
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </Link>
-          )}
+          {/* Start review session button */}
+          <Link href="/session/new" className="block">
+            <button className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-4 px-4 text-base transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]">
+              Start Review Session
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </Link>
         </>
       )}
     </div>

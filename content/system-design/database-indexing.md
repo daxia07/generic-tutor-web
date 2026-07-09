@@ -27,3 +27,39 @@ Indexing is the #1 performance optimization for databases. A missing index can t
 - Column order in composite indexes: (A, B) serves queries on A or (A, B) but NOT on B alone.
 - Indexes don't help with functions: WHERE UPPER(name) = 'X' won't use an index on name.
 - Forgetting to analyze query patterns before indexing — index design is driven by queries, not tables.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "Which data structure is most commonly used for database indexes?"
+options:
+  - A: Hash table
+  - B: B-tree / B+ tree
+  - C: Linked list
+  - D: Graph
+correct: B
+explanation: "B-trees and B+ trees are the most common index structures because they maintain sorted order and support range queries."
+difficulty: 1
+
+### Q2
+type: fill-in-blank
+stem: "An index on multiple columns is called a ______ index."
+answers:
+  - "composite"
+  - "compound"
+  - "multi-column"
+explanation: "Composite (compound) indexes cover multiple columns, with column order affecting query optimization."
+difficulty: 2
+
+### Q3
+type: multiple-choice
+stem: "What is the main trade-off when adding more indexes to a table?"
+options:
+  - A: Faster reads, slower writes
+  - B: Faster writes, slower reads
+  - C: Both faster
+  - D: No impact
+correct: A
+explanation: "Indexes speed up reads but slow down writes because each index must be updated on insert/update/delete."
+difficulty: 1

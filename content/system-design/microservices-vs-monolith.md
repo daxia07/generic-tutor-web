@@ -29,3 +29,42 @@ This is one of the most debated topics in software architecture. Interviewers wa
 - Distributed transactions are hard — sagas, eventual consistency, compensating transactions.
 - Start with a monolith, split when you have a clear need and organizational maturity.
 - "Nano-services" (too fine-grained) are worse than a monolith — network overhead dominates.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "What is a key advantage of microservices over a monolith?"
+options:
+  - A: Simpler deployment
+  - B: Independent scaling
+  - C: Fewer network calls
+  - D: Easier debugging
+correct: B
+explanation: "Microservices allow independent scaling of components. However, they add deployment complexity, network overhead, and debugging challenges."
+difficulty: 1
+
+### Q2
+type: select-all
+stem: "Which are challenges of microservices architecture?"
+options:
+  - A: Distributed tracing
+  - B: Network latency
+  - C: Data consistency
+  - D: Service discovery
+correct:
+  - A
+  - B
+  - C
+  - D
+explanation: "All four are microservice challenges: tracing across services, network overhead, eventual consistency, and dynamic service discovery."
+difficulty: 2
+
+### Q3
+type: fill-in-blank
+stem: "The ______ pattern breaks down a monolith by gradually extracting services one at a time."
+answers:
+  - "strangler fig"
+  - "strangler"
+explanation: "The Strangler Fig pattern incrementally replaces monolith functionality with microservices."
+difficulty: 3

@@ -29,3 +29,40 @@ Caching is the single highest-ROI optimization for read-heavy systems. A well-pl
 - Caching stale data without TTL or invalidation leads to bugs that are hard to debug.
 - Forgetting that caches are ephemeral — never use cache as primary data store.
 - Hot keys can overwhelm a single cache node — need key distribution strategy.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "Which caching strategy writes data to both cache and database simultaneously?"
+options:
+  - A: Cache-aside
+  - B: Write-through
+  - C: Write-behind
+  - D: Read-through
+correct: B
+explanation: "Write-through writes to cache and DB at the same time, ensuring consistency at the cost of write latency."
+difficulty: 2
+
+### Q2
+type: fill-in-blank
+stem: "When many threads simultaneously experience a cache miss and all hit the database, this is called a cache ______."
+answers:
+  - "stampede"
+explanation: "A cache stampede (or thundering herd) occurs when many requests miss the cache simultaneously."
+difficulty: 3
+
+### Q3
+type: select-all
+stem: "Which are valid cache eviction policies?"
+options:
+  - A: LRU
+  - B: Round-robin
+  - C: LFU
+  - D: FIFO
+correct:
+  - A
+  - C
+  - D
+explanation: "LRU (Least Recently Used), LFU (Least Frequently Used), and FIFO are all valid eviction policies. Round-robin is a load balancing strategy."
+difficulty: 2

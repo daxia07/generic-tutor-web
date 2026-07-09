@@ -146,3 +146,41 @@ Example: Real-time currency exchange rate feed.
 | Unary | 1 request, 1 response |
 | Streaming | Continuous data flow |
 | HTTP/2 | Multiplexed, faster than HTTP/1.1 |
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "Which protocol does gRPC use as its transport layer?"
+options:
+  - A: HTTP/1.1
+  - B: HTTP/2
+  - C: WebSocket
+  - D: TCP raw sockets
+correct: B
+explanation: "gRPC is built on HTTP/2, which provides multiplexed streams, binary framing, and header compression."
+difficulty: 1
+
+### Q2
+type: fill-in-blank
+stem: "gRPC uses ______ as its Interface Definition Language to define service contracts."
+answers:
+  - "Protocol Buffers"
+explanation: "Protocol Buffers (protobuf) define the service interface and message types in .proto files."
+difficulty: 2
+
+### Q3
+type: select-all
+stem: "Which are gRPC communication patterns?"
+options:
+  - A: Unary
+  - B: Server streaming
+  - C: Client streaming
+  - D: Bidirectional streaming
+correct:
+  - A
+  - B
+  - C
+  - D
+explanation: "gRPC supports all four patterns: Unary (1:1), server streaming, client streaming, and bidirectional streaming."
+difficulty: 2

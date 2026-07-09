@@ -26,3 +26,40 @@ Load balancers are the entry point of any scalable architecture. They enable hor
 - Sticky sessions break horizontal scaling benefits — externalize session state instead.
 - Single load balancer is a single point of failure — need redundancy (active-passive or active-active).
 - Not considering that L7 load balancing adds latency vs L4.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "Which load balancing algorithm sends requests to the server with the fewest active connections?"
+options:
+  - A: Round-robin
+  - B: Least connections
+  - C: IP hash
+  - D: Random
+correct: B
+explanation: "Least connections tracks active connections per server and routes to the least busy one."
+difficulty: 1
+
+### Q2
+type: select-all
+stem: "Which are Layer 7 (application layer) load balancing features?"
+options:
+  - A: URL-based routing
+  - B: SSL termination
+  - C: IP-based routing
+  - D: Header-based routing
+correct:
+  - A
+  - D
+explanation: "Layer 7 can route based on URL paths and HTTP headers. IP-based routing is Layer 4. SSL termination can happen at either layer."
+difficulty: 3
+
+### Q3
+type: fill-in-blank
+stem: "A ______ check determines if a backend server is healthy enough to receive traffic."
+answers:
+  - "health"
+  - "health check"
+explanation: "Health checks (active or passive) determine if a server should remain in the load balancer's pool."
+difficulty: 1

@@ -27,3 +27,38 @@ When a single database can't handle the write throughput or data volume, shardin
 - Resharding is a massive operational challenge — consistent hashing helps but doesn't eliminate it.
 - Auto-increment IDs break across shards — use UUIDs or Snowflake IDs.
 - Transactions across shards are complex — 2PC is slow, saga pattern is eventual consistency.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "What is the primary challenge when a shard becomes disproportionately large?"
+options:
+  - A: Network latency
+  - B: Hot spot / data skew
+  - C: Replication lag
+  - D: Cache invalidation
+correct: B
+explanation: "Data skew creates hot spots where one shard receives far more traffic or data than others."
+difficulty: 2
+
+### Q2
+type: fill-in-blank
+stem: "The process of moving data between shards to rebalance load is called shard ______."
+answers:
+  - "rebalancing"
+  - "resplitting"
+explanation: "Shard rebalancing redistributes data across shards when load becomes uneven."
+difficulty: 3
+
+### Q3
+type: multiple-choice
+stem: "Which sharding key strategy makes it easiest to add new shards without rehashing all data?"
+options:
+  - A: Hash-based
+  - B: Range-based
+  - C: Directory-based
+  - D: Random
+correct: C
+explanation: "Directory-based sharding uses a lookup table, making it easy to add shards by updating the mapping. Hash-based requires rehashing."
+difficulty: 3

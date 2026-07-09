@@ -135,3 +135,41 @@ Auticuro is Airwallex's wallet service. Key facts:
 ## Related
 - [[knowledge/system-design/event-driven-architecture|Event-Driven Architecture]]
 - [[knowledge/airwallex-interview-prep|Airwallex Interview Prep]]
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "In Event Sourcing, how is the current state of an entity determined?"
+options:
+  - A: Read from a database table
+  - B: Replay all events from the event store
+  - C: Cache the latest value
+  - D: Query an API
+correct: B
+explanation: "Event Sourcing stores all state changes as events. Current state is derived by replaying the event sequence."
+difficulty: 2
+
+### Q2
+type: fill-in-blank
+stem: "A ______ in event sourcing is a snapshot of the current state, used to avoid replaying all events from the beginning."
+answers:
+  - "snapshot"
+  - "checkpoint"
+explanation: "Snapshots periodically capture the current state to avoid replaying the full event history."
+difficulty: 3
+
+### Q3
+type: select-all
+stem: "Which are advantages of Event Sourcing?"
+options:
+  - A: Complete audit trail
+  - B: Time travel (replay to any point)
+  - C: Simpler queries
+  - D: Natural event-driven integration
+correct:
+  - A
+  - B
+  - D
+explanation: "Event Sourcing provides full audit trails, time travel, and natural event-driven integration. Queries are actually more complex (need projections)."
+difficulty: 3

@@ -31,3 +31,41 @@ Message queues are the backbone of microservice architectures. They handle async
 - DLQs are essential — without them, poison messages block the queue forever.
 - Don't use message queues for request-response — they're for fire-and-forget or event-driven patterns.
 - Consumer group scaling: Kafka = partition count limits parallelism. RabbitMQ = competing consumers.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "Which messaging pattern delivers each message to exactly one consumer in a group?"
+options:
+  - A: Pub/Sub
+  - B: Point-to-point (queue)
+  - C: Broadcast
+  - D: Scatter
+correct: B
+explanation: "Point-to-point queues deliver each message to one consumer. Pub/Sub delivers to all subscribers."
+difficulty: 1
+
+### Q2
+type: fill-in-blank
+stem: "Ensuring a message is processed exactly once, even in the presence of failures, is called ______ delivery."
+answers:
+  - "exactly-once"
+  - "exactly once"
+explanation: "Exactly-once delivery ensures no duplicates and no lost messages, even during failures."
+difficulty: 3
+
+### Q3
+type: select-all
+stem: "Which are message delivery guarantees supported by most message queues?"
+options:
+  - A: At-most-once
+  - B: At-least-once
+  - C: Exactly-once
+  - D: Best-effort
+correct:
+  - A
+  - B
+  - C
+explanation: "The three standard delivery guarantees are at-most-once, at-least-once, and exactly-once."
+difficulty: 2

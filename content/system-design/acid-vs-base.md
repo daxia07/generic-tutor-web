@@ -28,3 +28,37 @@ This is the theoretical foundation for database trade-offs. Interviewers use it 
 - BASE doesn't mean "no consistency" — it means consistency is managed at the application level.
 - Distributed transactions (2PC) try to give ACID across services but are slow and complex.
 - Financial systems almost always need ACID for monetary operations — but not for everything else.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "Which ACID property ensures that a transaction either completes entirely or not at all?"
+options:
+  - A: Consistency
+  - B: Isolation
+  - C: Atomicity
+  - D: Durability
+correct: C
+explanation: "Atomicity guarantees all-or-nothing: either all operations in a transaction succeed, or none do."
+difficulty: 1
+
+### Q2
+type: order
+stem: "Order the ACID properties alphabetically:"
+items:
+  - "Atomicity"
+  - "Consistency"
+  - "Durability"
+  - "Isolation"
+correct_order: [0, 1, 3, 2]
+explanation: "A-C-I-D: Atomicity, Consistency, Isolation, Durability."
+difficulty: 1
+
+### Q3
+type: fill-in-blank
+stem: "BASE stands for Basically Available, ______ state, and Eventually consistent."
+answers:
+  - "Soft"
+explanation: "BASE = Basically Available, Soft state, Eventually consistent — the opposite of ACID."
+difficulty: 2

@@ -27,3 +27,37 @@ In microservice architectures, one failing service can cascade and bring down th
 - Circuit breakers don't fix the underlying problem — they buy time. You still need monitoring and alerting.
 - Half-open state needs careful tuning — too many test requests overwhelm a recovering service.
 - Combine with retries (with exponential backoff) for transient failures, but don't retry on circuit open.
+
+## Questions
+
+### Q1
+type: multiple-choice
+stem: "In which state does a circuit breaker immediately reject requests without calling the downstream service?"
+options:
+  - A: Closed
+  - B: Open
+  - C: Half-open
+  - D: Recovering
+correct: B
+explanation: "In the Open state, the circuit breaker rejects all requests immediately, giving the downstream service time to recover."
+difficulty: 2
+
+### Q2
+type: order
+stem: "Order the circuit breaker states as they typically cycle during a failure → recovery scenario:"
+items:
+  - "Closed"
+  - "Open"
+  - "Half-Open"
+correct_order: [0, 1, 2]
+explanation: "Closed (normal) → Open (failures detected, reject all) → Half-Open (test if recovered)."
+difficulty: 2
+
+### Q3
+type: fill-in-blank
+stem: "The ______ state allows a limited number of test requests through to check if the downstream service has recovered."
+answers:
+  - "half-open"
+  - "half open"
+explanation: "Half-open state allows a few test requests to probe if the service is healthy again."
+difficulty: 2

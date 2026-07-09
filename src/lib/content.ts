@@ -5,7 +5,7 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
-import type { Concept } from "./types";
+import type { Concept, Question, QuestionType } from "./types";
 
 const CONTENT_DIR = path.join(process.cwd(), "content", "system-design");
 
@@ -34,6 +34,7 @@ export function loadConcept(filePath: string): Concept {
     gotchas: sections.gotchas,
     prerequisites: data.prerequisites || [],
     tags: data.tags || [],
+    questions: sections.questions,
   };
 }
 
@@ -93,6 +94,7 @@ interface ParsedSections {
   whyItMatters: string;
   interviewQuestions: string[];
   gotchas: string[];
+  questions: Question[];
 }
 
 function parseSections(markdown: string): ParsedSections {
@@ -102,6 +104,7 @@ function parseSections(markdown: string): ParsedSections {
     whyItMatters: "",
     interviewQuestions: [],
     gotchas: [],
+    questions: [],
   };
 
   // Split by ## headings
@@ -122,6 +125,8 @@ function parseSections(markdown: string): ParsedSections {
       result.interviewQuestions = parseListItems(clean);
     } else if (h.includes("gotcha") || h.includes("watch out") || h.includes("pitfall") || h.includes("common mistake")) {
       result.gotchas = parseListItems(clean);
+    } else if (h === "questions") {
+      result.questions = parseQuestions(clean);
     }
   }
 
@@ -158,7 +163,6 @@ function splitByHeadings(
 
 function parseKeyTerms(text: string): Record<string, string> {
   const terms: Record<string, string> = {};
-  // Pattern: **Term**: definition or - **Term**: definition
   const lines = text.split("\n");
   for (const line of lines) {
     const match = line.match(/[-*]\s+\*\*(.+?)\*\*:?\s*(.+)/);
@@ -175,4 +179,205 @@ function parseListItems(text: string): string[] {
     .filter((line) => line.match(/^(\d+\.|[-*])\s/))
     .map((line) => line.replace(/^(\d+\.|[-*])\s*/, "").trim())
     .filter(Boolean);
+}
+
+// ---------------------------------------------------------------------------
+// Question parser — extracts structured questions from ## Questions section
+// ---------------------------------------------------------------------------
+
+function parseQuestions(text: string): Question[] {
+  const questions: Question[] = [];
+  
+  // Split by ### Q1, ### Q2, etc.
+  const qRegex = /^### (Q\d+)\s*$/gm;
+  const qSections = splitByHeadings(text, qRegex);
+  
+  for (const [qLabel, qBody] of Object.entries(qSections)) {
+    if (qLabel === "__preamble__") continue;
+    
+    const qData = parseQuestionKeyValue(qBody.trim());
+    if (!qData) continue;
+    
+    const qIndex = qLabel.replace("Q", "");
+    const conceptId = ""; // Will be set by the caller
+    const qId = `${conceptId}-q${qIndex}`;
+    
+    const type = (qData.type || "multiple-choice") as QuestionType;
+    const stem = qData.stem || "";
+    const explanation = qData.explanation || "";
+    const difficulty = parseInt(qData.difficulty || "3", 10);
+    
+    let question: Question;
+    
+    switch (type) {
+      case "multiple-choice": {
+        const options = qData.options || [];
+        const correctAnswer = qData.correct || "";
+        question = {
+          id: qId,
+          conceptId,
+          type: "multiple-choice",
+          stem,
+          options: parseOptions(options),
+          correctAnswer,
+          explanation,
+          difficulty,
+        };
+        break;
+      }
+      case "fill-in-blank": {
+        const answers = qData.answers || [];
+        question = {
+          id: qId,
+          conceptId,
+          type: "fill-in-blank",
+          stem,
+          blanks: answers.length,
+          answers,
+          explanation,
+          difficulty,
+          hint: qData.hint,
+          wordBank: qData.word_bank ? parseWordBank(qData.word_bank) : undefined,
+        };
+        break;
+      }
+      case "select-all": {
+        const options = qData.options || [];
+        const correctAnswers = qData.correct || [];
+        question = {
+          id: qId,
+          conceptId,
+          type: "select-all",
+          stem,
+          options: parseOptions(options),
+          correctAnswers: Array.isArray(correctAnswers) ? correctAnswers : [correctAnswers],
+          explanation,
+          difficulty,
+        };
+        break;
+      }
+      case "order": {
+        const items = qData.items || [];
+        const correctOrder = qData.correct_order || [];
+        question = {
+          id: qId,
+          conceptId,
+          type: "order",
+          stem,
+          items: Array.isArray(items) ? items : [],
+          correctOrder: Array.isArray(correctOrder) ? correctOrder.map(Number) : [],
+          explanation,
+          difficulty,
+        };
+        break;
+      }
+      default:
+        continue;
+    }
+    
+    questions.push(question);
+  }
+  
+  return questions;
+}
+
+/**
+ * Parse key-value pairs from a question block.
+ * Format:
+ *   type: multiple-choice
+ *   stem: "Which caching strategy..."
+ *   options:
+ *     - A: Cache-aside
+ *     - B: Write-through
+ *   correct: B
+ *   explanation: "Write-through..."
+ */
+function parseQuestionKeyValue(text: string): Record<string, any> | null {
+  if (!text.trim()) return null;
+  
+  const result: Record<string, any> = {};
+  const lines = text.split("\n");
+  let currentKey = "";
+  let inList = false;
+  let listItems: string[] = [];
+  
+  for (const line of lines) {
+    // List item (indented with -)
+    const listMatch = line.match(/^\s+-\s+(.+)/);
+    if (listMatch && inList) {
+      listItems.push(listMatch[1].trim());
+      continue;
+    }
+    
+    // Key-value pair
+    const kvMatch = line.match(/^(\w[\w_-]*)\s*:\s*(.*)/);
+    if (kvMatch) {
+      // Save previous list
+      if (inList && listItems.length > 0) {
+        result[currentKey] = listItems;
+        listItems = [];
+      }
+      
+      currentKey = kvMatch[1].trim().toLowerCase();
+      const value = kvMatch[2].trim();
+      
+      // Check if this key starts a list (value is empty)
+      if (!value) {
+        inList = true;
+        listItems = [];
+      } else {
+        inList = false;
+        // Try to parse as JSON, otherwise keep as string
+        if (value.startsWith("[") || value.startsWith("{")) {
+          try {
+            result[currentKey] = JSON.parse(value);
+          } catch {
+            result[currentKey] = value;
+          }
+        } else {
+          // Strip surrounding quotes
+          result[currentKey] = value.replace(/^["']|["']$/g, "");
+        }
+      }
+      continue;
+    }
+    
+    // Continuation of previous value
+    if (currentKey && !inList && line.trim()) {
+      result[currentKey] = (result[currentKey] || "") + " " + line.trim();
+    }
+  }
+  
+  // Save final list
+  if (inList && listItems.length > 0) {
+    result[currentKey] = listItems;
+  }
+  
+  return Object.keys(result).length > 0 ? result : null;
+}
+
+function parseOptions(options: string | string[]): { id: string; text: string }[] {
+  if (Array.isArray(options)) {
+    return options.map((opt, i) => {
+      // Format: "A: Cache-aside" or just "Cache-aside"
+      const match = String(opt).match(/^([A-E])\s*[:.]\s*(.+)/);
+      if (match) {
+        return { id: match[1], text: match[2].trim() };
+      }
+      return { id: String.fromCharCode(65 + i), text: String(opt) };
+    });
+  }
+  return [];
+}
+
+function parseWordBank(bank: string | string[]): string[] {
+  if (Array.isArray(bank)) return bank.map(String);
+  if (typeof bank === "string") {
+    try {
+      return JSON.parse(bank);
+    } catch {
+      return bank.split(",").map((s) => s.trim());
+    }
+  }
+  return [];
 }
