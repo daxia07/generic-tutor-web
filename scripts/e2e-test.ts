@@ -89,7 +89,7 @@ async function runTests() {
   console.log("\n🚀 Starting E2E tests...\n");
 
   const browser: Browser = await puppeteer.launch({
-    headless: "new" as const,
+    headless: true,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
