@@ -162,11 +162,16 @@ explanation: "gRPC is built on HTTP/2, which provides multiplexed streams, binar
 difficulty: 1
 
 ### Q2
-type: fill-in-blank
-stem: "gRPC uses ______ as its Interface Definition Language to define service contracts."
-answers:
-  - "Protocol Buffers"
-explanation: "Protocol Buffers (protobuf) define the service interface and message types in .proto files."
+type: scenario
+stem: "Your microservices team wants type-safe API contracts with automatic client code generation and efficient binary serialization. REST with JSON doesn't provide compile-time type safety. What should you use?"
+options:
+  - A: GraphQL with schema validation
+  - B: gRPC with Protocol Buffers — define contracts in .proto files, generate code for multiple languages
+  - C: OpenAPI/Swagger with code generation
+  - D: XML-RPC
+correct: B
+explanation: "gRPC uses Protocol Buffers as its Interface Definition Language (.proto files). The compiler generates type-safe client stubs and server skeletons in multiple languages. Binary serialization is 3-10x smaller and faster than JSON."
+trade_offs: "gRPC is harder to debug than REST (binary protocol, not human-readable). Browser support requires gRPC-Web or a REST proxy. Not ideal for public-facing APIs where REST is the standard."
 difficulty: 2
 
 ### Q3

@@ -20,6 +20,7 @@ import { MultipleChoice } from "@/components/questions/MultipleChoice";
 import { FillInBlank } from "@/components/questions/FillInBlank";
 import { SelectAll } from "@/components/questions/SelectAll";
 import { OrderArrange } from "@/components/questions/OrderArrange";
+import { Scenario } from "@/components/questions/Scenario";
 
 interface SessionPageProps {
   params: Promise<{ sessionId: string }>;
@@ -82,6 +83,9 @@ export default function SessionPage({ params }: SessionPageProps) {
         break;
       case "order":
         correctAnswerStr = JSON.stringify(question.correctOrder);
+        break;
+      case "scenario":
+        correctAnswerStr = question.correctAnswer;
         break;
       default:
         correctAnswerStr = "";
@@ -348,6 +352,13 @@ export default function SessionPage({ params }: SessionPageProps) {
               <OrderArrange
                 question={currentQuestion}
                 onAnswer={handleOrderAnswer}
+              />
+            )}
+
+            {currentQuestion.type === "scenario" && (
+              <Scenario
+                question={currentQuestion}
+                onAnswer={handleMCAnswer}
               />
             )}
 

@@ -45,11 +45,16 @@ explanation: "CDNs serve content from geographically distributed edge servers, r
 difficulty: 1
 
 ### Q2
-type: fill-in-blank
-stem: "CDN servers located closer to end users are called ______ servers."
-answers:
-  - "edge"
-explanation: "Edge servers are CDN nodes positioned close to users for low-latency content delivery."
+type: scenario
+stem: "Your SaaS application serves users globally. Users in APAC experience 500ms+ latency because all requests route to your US-East data center. How do you reduce latency to under 100ms for static assets?"
+options:
+  - A: Upgrade your US-East server to have more bandwidth
+  - B: Deploy a CDN with edge nodes in APAC — serve static assets from the nearest point of presence
+  - C: Move your entire data center to APAC
+  - D: Compress all assets with gzip
+correct: B
+explanation: "A CDN caches static content (images, JS, CSS, videos) at edge locations worldwide. APAC users download from the nearest edge node (typically <50ms away) instead of crossing the Pacific to US-East."
+trade_offs: "CDNs only help with cacheable content. Dynamic API responses still hit your origin. For dynamic content latency, consider edge computing (Cloudflare Workers, Lambda@Edge) or multi-region deployments."
 difficulty: 1
 
 ### Q3

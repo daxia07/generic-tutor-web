@@ -32,24 +32,29 @@ Almost every system design involves storing files somewhere. Blob storage is the
 ## Questions
 
 ### Q1
-type: multiple-choice
-stem: "Which access tier in cloud blob storage is cheapest for long-term archival?"
+type: scenario
+stem: "Your video streaming platform stores 10PB of content. New releases get heavy traffic for 2 weeks, then drop to near-zero. Old content is rarely accessed. How do you design a cost-effective storage tier strategy?"
 options:
-  - A: Hot
-  - B: Cool
-  - C: Archive
-  - D: Premium
-correct: C
-explanation: "Archive tier has the lowest storage cost but highest retrieval cost and latency (hours to access)."
-difficulty: 1
+  - A: Store everything in hot storage for consistent low-latency access
+  - B: Use lifecycle policies — hot tier for new releases, then auto-transition to cool and archive tiers
+  - C: Store everything in archive tier and pre-warm on demand
+  - D: Use a CDN for all content and skip cloud storage
+correct: B
+explanation: "Cloud blob storage (S3, Azure Blob) offers tiered pricing: hot (frequent access, higher storage cost), cool (infrequent, lower cost), archive (rare access, lowest cost). Lifecycle policies automate tier transitions based on age or access patterns."
+trade_offs: "Rehydrating from archive takes hours and incurs egress charges. For content that might go viral unexpectedly, keep it in cool tier rather than archive."
+difficulty: 2
 
 ### Q2
-type: fill-in-blank
-stem: "Amazon S3 provides ______ durability by replicating data across multiple facilities."
-answers:
-  - "99.999999999"
-  - "11 nines"
-explanation: "S3 provides 99.999999999% (11 nines) durability by storing data redundantly across multiple Availability Zones."
+type: scenario
+stem: "Your regulatory compliance requires zero data loss for financial records stored in cloud object storage. The provider claims 99.999999999% (11 nines) durability. How is this achieved?"
+options:
+  - A: A single RAID array with dual parity drives
+  - B: Redundant storage across multiple availability zones with automatic replication and checksums
+  - C: Frequent backup to tape and offsite vault
+  - D: Client-side encryption with distributed hash tables
+correct: B
+explanation: "Cloud providers achieve 11 nines durability by replicating data across multiple AZs, adding checksums for bit-rot detection, and automatic self-healing. S3 stores 3+ copies in at least 2 AZs by default."
+trade_offs: "Durability ≠ availability. Your data won't be lost, but it might be temporarily inaccessible during an AZ outage. For critical workloads, use cross-region replication."
 difficulty: 2
 
 ### Q3

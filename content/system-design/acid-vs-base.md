@@ -44,21 +44,27 @@ explanation: "Atomicity guarantees all-or-nothing: either all operations in a tr
 difficulty: 1
 
 ### Q2
-type: order
-stem: "Order the ACID properties alphabetically:"
-items:
-  - "Atomicity"
-  - "Consistency"
-  - "Durability"
-  - "Isolation"
-correct_order: [0, 1, 3, 2]
-explanation: "A-C-I-D: Atomicity, Consistency, Isolation, Durability."
-difficulty: 1
+type: scenario
+stem: "A bank transfer debits account A but the credit to account B fails mid-transaction. Which ACID property ensures the debit is rolled back?"
+options:
+  - A: Consistency
+  - B: Isolation
+  - C: Atomicity
+  - D: Durability
+correct: C
+explanation: "Atomicity guarantees all-or-nothing: either both operations commit or neither does. Without atomicity, partial transactions would leave the database in an inconsistent state."
+trade_offs: "Atomicity requires transaction logs (write-ahead logs) which add write overhead. In high-throughput systems, some accept eventual consistency instead."
+difficulty: 2
 
 ### Q3
-type: fill-in-blank
-stem: "BASE stands for Basically Available, ______ state, and Eventually consistent."
-answers:
-  - "Soft"
-explanation: "BASE = Basically Available, Soft state, Eventually consistent — the opposite of ACID."
+type: scenario
+stem: "Your e-commerce product catalog shows stale prices after a backend update. Customers occasionally see the old price for a few seconds. Which consistency model is this?"
+options:
+  - A: Strong consistency
+  - B: Sequential consistency
+  - C: Eventual consistency (BASE)
+  - D: Linearizability
+correct: C
+explanation: "BASE systems accept stale reads temporarily — the data will converge eventually. Strong consistency would show the new price immediately but at the cost of higher latency."
+trade_offs: "Eventual consistency works for product catalogs but is dangerous for inventory counts or payment balances where stale data causes real errors."
 difficulty: 2

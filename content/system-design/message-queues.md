@@ -47,12 +47,16 @@ explanation: "Point-to-point queues deliver each message to one consumer. Pub/Su
 difficulty: 1
 
 ### Q2
-type: fill-in-blank
-stem: "Ensuring a message is processed exactly once, even in the presence of failures, is called ______ delivery."
-answers:
-  - "exactly-once"
-  - "exactly once"
-explanation: "Exactly-once delivery ensures no duplicates and no lost messages, even during failures."
+type: scenario
+stem: "A customer clicks 'Pay' twice in quick succession. The payment service processes both messages, charging the customer twice. Which message delivery guarantee would have prevented this?"
+options:
+  - A: At-most-once — duplicate messages are dropped
+  - B: Exactly-once — duplicate messages are detected and deduplicated
+  - C: At-least-once — messages are never lost but may be delivered multiple times
+  - D: Ordered delivery — messages arrive in sequence
+correct: B
+explanation: "Exactly-once delivery ensures each message is processed once, even if the producer retries or the network duplicates. It typically uses idempotency keys (like an order ID) to detect and skip duplicates."
+trade_offs: "Exactly-once is expensive: it requires distributed coordination and transaction logs. Many systems use at-least-once + idempotent consumers instead (cheaper, achieves the same effect for idempotent operations)."
 difficulty: 3
 
 ### Q3

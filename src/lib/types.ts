@@ -58,7 +58,7 @@ export interface StreakState {
 // Question types for Duolingo-style sessions
 // ---------------------------------------------------------------------------
 
-export type QuestionType = "multiple-choice" | "fill-in-blank" | "select-all" | "order";
+export type QuestionType = "multiple-choice" | "fill-in-blank" | "select-all" | "order" | "scenario";
 
 export interface BaseQuestion {
   id: string;
@@ -96,11 +96,19 @@ export interface OrderQuestion extends BaseQuestion {
   correctOrder: number[]; // indices
 }
 
+export interface ScenarioQuestion extends BaseQuestion {
+  type: "scenario";
+  options: { id: string; text: string }[];
+  correctAnswer: string;
+  tradeOffs?: string;
+}
+
 export type Question =
   | MultipleChoiceQuestion
   | FillInBlankQuestion
   | SelectAllQuestion
-  | OrderQuestion;
+  | OrderQuestion
+  | ScenarioQuestion;
 
 // ---------------------------------------------------------------------------
 // Session types

@@ -43,12 +43,16 @@ explanation: "Data skew creates hot spots where one shard receives far more traf
 difficulty: 2
 
 ### Q2
-type: fill-in-blank
-stem: "The process of moving data between shards to rebalance load is called shard ______."
-answers:
-  - "rebalancing"
-  - "resplitting"
-explanation: "Shard rebalancing redistributes data across shards when load becomes uneven."
+type: scenario
+stem: "You shard your social media database by user_id. A few power users generate 100x more posts than average, making their shards disproportionately large. What is this problem called and what's the best fix?"
+options:
+  - A: Hot partition / data skew — use hash-based sharding or composite keys
+  - B: Replication lag — add more replicas for hot shards
+  - C: Network bottleneck — upgrade shard server bandwidth
+  - D: Index fragmentation — rebuild indexes on the hot shard
+correct: A
+explanation: "Data skew (hot partition) occurs when a sharding key doesn't distribute data evenly. Hash-based sharding spreads load more uniformly. Composite keys (user_id + timestamp) can also distribute time-series data better."
+trade_offs: "Hash-based sharding makes range queries harder (can't scan all of one user's data in one shard). Range-based sharding keeps data together but risks hot spots."
 difficulty: 3
 
 ### Q3

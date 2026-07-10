@@ -44,13 +44,16 @@ explanation: "etcd uses Raft. ZooKeeper uses ZAB (which is Raft-like). Paxos is 
 difficulty: 2
 
 ### Q2
-type: fill-in-blank
-stem: "In the Raft algorithm, a node must receive votes from a ______ of nodes to become leader."
-answers:
-  - "majority"
-  - "quorum"
-  - "majority (quorum)"
-explanation: "Raft requires a majority (quorum) of nodes to elect a leader, ensuring at most one leader per term."
+type: scenario
+stem: "A 5-node cluster experiences a network partition: 2 nodes are isolated from the other 3. Can the group of 3 nodes still make progress (accept writes and elect a leader)?"
+options:
+  - A: No — all nodes must be reachable for consensus
+  - B: Yes — 3 out of 5 is a majority (quorum), so they can elect a leader and continue
+  - C: Only if the partitioned nodes voluntarily step down
+  - D: Yes, but only for reads, not writes
+correct: B
+explanation: "In Raft/Paxos, a quorum is ⌊N/2⌋ + 1. For 5 nodes, quorum = 3. The group of 3 can elect a leader and commit entries. The isolated 2 nodes cannot achieve quorum and will not make progress."
+trade_offs: "During a partition, two competing leaders could emerge (split-brain). Raft prevents this by requiring majority vote. However, the isolated minority becomes unavailable until the partition heals."
 difficulty: 2
 
 ### Q3

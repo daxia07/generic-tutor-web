@@ -40,12 +40,17 @@ explanation: "The CAP theorem states you can only guarantee 2 of 3: Consistency,
 difficulty: 1
 
 ### Q2
-type: fill-in-blank
-stem: "CAP stands for Consistency, ______, and Partition Tolerance."
-answers:
-  - "Availability"
-explanation: "CAP = Consistency, Availability, Partition Tolerance."
-difficulty: 1
+type: scenario
+stem: "Your distributed database must serve reads even during a network partition between two data centers. You accept that some reads may return stale data. Which two CAP properties are you prioritizing?"
+options:
+  - A: Consistency + Availability
+  - B: Consistency + Partition Tolerance
+  - C: Availability + Partition Tolerance
+  - D: Consistency + Durability
+correct: C
+explanation: "Serving reads during a partition means you choose Availability over Consistency. Partition Tolerance is mandatory in distributed systems. This is the AP trade-off (e.g., Cassandra, DynamoDB in eventual consistency mode)."
+trade_offs: "AP systems may return stale data. For banking or inventory, you might choose CP instead (sacrifice availability during partitions) to prevent incorrect transactions."
+difficulty: 2
 
 ### Q3
 type: multiple-choice

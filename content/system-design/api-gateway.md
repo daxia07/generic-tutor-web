@@ -59,10 +59,14 @@ explanation: "API gateways handle SSL termination, request/response transformati
 difficulty: 2
 
 ### Q3
-type: fill-in-blank
-stem: "The pattern where a single API endpoint handles requests for multiple microservices is called the ______ gateway pattern."
-answers:
-  - "API"
-  - "api"
-explanation: "An API gateway provides a single entry point for all microservice requests."
-difficulty: 1
+type: scenario
+stem: "You have 10 microservices, each with its own authentication logic. Mobile clients must make multiple calls and handle auth separately for each. How do you unify access?"
+options:
+  - A: Add auth to each service and let clients manage tokens
+  - B: Use an API Gateway as a single entry point that handles authentication and routes to services
+  - C: Use a shared database for auth that all services query
+  - D: Implement OAuth on the client side
+correct: B
+explanation: "An API Gateway centralizes cross-cutting concerns like authentication, rate limiting, and routing. Clients call one endpoint; the gateway validates auth and forwards to the right service."
+trade_offs: "The API Gateway becomes a single point of failure and can add latency. Use it for cross-cutting concerns but keep service-specific logic in the services themselves."
+difficulty: 2

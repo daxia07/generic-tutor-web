@@ -233,12 +233,17 @@ explanation: "WHERE filters before GROUP BY. HAVING filters after grouping."
 difficulty: 1
 
 ### Q2
-type: fill-in-blank
-stem: "The SQL ______ clause filters groups after the GROUP BY clause."
-answers:
-  - "HAVING"
-explanation: "HAVING is like WHERE but operates on grouped/aggregated results."
-difficulty: 1
+type: scenario
+stem: "You write: SELECT department, COUNT(*) FROM employees GROUP BY department ______ COUNT(*) > 5. Which clause goes in the blank and why?"
+options:
+  - A: WHERE — because it filters rows before grouping
+  - B: HAVING — because it filters groups after aggregation
+  - C: LIMIT — because it caps the result count
+  - D: DISTINCT — because it removes duplicate groups
+correct: B
+explanation: "HAVING filters after GROUP BY aggregates the data. You can't use WHERE with aggregate functions like COUNT(*) because WHERE runs before grouping."
+trade_offs: "For simple pre-group filters (e.g., only active employees), use WHERE first — it reduces the rows fed into GROUP BY, improving performance."
+difficulty: 2
 
 ### Q3
 type: order

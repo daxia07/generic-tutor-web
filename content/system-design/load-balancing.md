@@ -56,10 +56,14 @@ explanation: "Layer 7 can route based on URL paths and HTTP headers. IP-based ro
 difficulty: 3
 
 ### Q3
-type: fill-in-blank
-stem: "A ______ check determines if a backend server is healthy enough to receive traffic."
-answers:
-  - "health"
-  - "health check"
-explanation: "Health checks (active or passive) determine if a server should remain in the load balancer's pool."
+type: scenario
+stem: "Your load balancer continues sending traffic to a backend server that crashed 30 seconds ago. Users see 502 errors. What mechanism should have prevented this?"
+options:
+  - A: Round-robin rotation to skip the crashed server
+  - B: Active health checks — periodically probe backends and remove unhealthy ones from the pool
+  - C: Increasing the number of backend servers
+  - D: Client-side retry logic
+correct: B
+explanation: "Health checks (HTTP, TCP, or custom) periodically verify backend availability. When a check fails N consecutive times, the load balancer removes that backend from the rotation. Active checks catch failures faster than passive detection."
+trade_offs: "Health check intervals create a detection gap (crash to removal). Too frequent = overhead. Too slow = user-facing errors. Typical interval: 5-10s with 2-3 failure threshold."
 difficulty: 1

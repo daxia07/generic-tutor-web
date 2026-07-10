@@ -271,6 +271,22 @@ function parseQuestions(text: string): Question[] {
         };
         break;
       }
+      case "scenario": {
+        const options = qData.options || [];
+        const correctAnswer = qData.correct || "";
+        question = {
+          id: qId,
+          conceptId,
+          type: "scenario",
+          stem,
+          options: parseOptions(options),
+          correctAnswer: typeof correctAnswer === "string" ? correctAnswer : String(correctAnswer),
+          explanation,
+          difficulty,
+          tradeOffs: qData.trade_offs || undefined,
+        };
+        break;
+      }
       default:
         continue;
     }

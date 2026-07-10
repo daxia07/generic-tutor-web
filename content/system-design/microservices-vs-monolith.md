@@ -61,10 +61,14 @@ explanation: "All four are microservice challenges: tracing across services, net
 difficulty: 2
 
 ### Q3
-type: fill-in-blank
-stem: "The ______ pattern breaks down a monolith by gradually extracting services one at a time."
-answers:
-  - "strangler fig"
-  - "strangler"
-explanation: "The Strangler Fig pattern incrementally replaces monolith functionality with microservices."
+type: scenario
+stem: "Your company has a 5-year-old monolith that's too risky to rewrite from scratch. How do you migrate to microservices incrementally?"
+options:
+  - A: Stop the monolith, rebuild each service, then switch all traffic at once
+  - B: Extract one service at a time using the Strangler Fig pattern, routing traffic gradually
+  - C: Keep the monolith forever and build new features as separate microservices alongside it
+  - D: Create a microservices mesh and proxy all monolith calls through it
+correct: B
+explanation: "The Strangler Fig pattern incrementally replaces monolith functionality: route one API endpoint to a new microservice, verify it works, then move to the next. Zero big-bang risk."
+trade_offs: "Running monolith + microservices simultaneously adds operational complexity. You need an API gateway to route traffic correctly during the transition period."
 difficulty: 3

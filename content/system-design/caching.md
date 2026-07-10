@@ -45,11 +45,16 @@ explanation: "Write-through writes to cache and DB at the same time, ensuring co
 difficulty: 2
 
 ### Q2
-type: fill-in-blank
-stem: "When many threads simultaneously experience a cache miss and all hit the database, this is called a cache ______."
-answers:
-  - "stampede"
-explanation: "A cache stampede (or thundering herd) occurs when many requests miss the cache simultaneously."
+type: scenario
+stem: "A popular cache key expires during a traffic spike. 1000 concurrent requests all miss the cache, hit the database simultaneously, and CPU spikes to 100%. What happened and how do you prevent it?"
+options:
+  - A: Cache invalidation — use a write-through cache instead
+  - B: Cache stampede / thundering herd — use request coalescence or early expiration with jitter
+  - C: Memory overflow — increase cache size
+  - D: Cache pollution — use LRU eviction
+correct: B
+explanation: "Cache stampede occurs when many requests simultaneously find an expired key and all query the database. Fixes: (1) request coalescence (only one thread fetches, others wait), (2) probabilistic early expiration (refresh before TTL with random jitter), (3) mutex/lock per key."
+trade_offs: "Request coalescence adds complexity and can create head-of-line blocking. Simple approach: set TTL with random jitter (TTL + random(0, 60s)) so keys don't expire simultaneously."
 difficulty: 3
 
 ### Q3

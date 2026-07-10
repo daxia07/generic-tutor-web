@@ -369,6 +369,19 @@ function deserializeQuestion(
         difficulty: row.difficulty,
         isReview,
       };
+    case "scenario":
+      return {
+        id: row.id,
+        conceptId: row.conceptId,
+        type: "scenario",
+        stem: row.stem,
+        options,
+        correctAnswer: typeof correctAnswer === "string" ? correctAnswer : correctAnswer[0] || "",
+        explanation: row.explanation,
+        difficulty: row.difficulty,
+        isReview,
+        tradeOffs: row.hint || undefined,
+      };
     default:
       return {
         id: row.id,

@@ -67,13 +67,13 @@ async function seed() {
     for (const q of concept.questions) {
       const qId = `${concept.id}-q${q.id.split("q").pop() || q.id}`;
       
-      const options = q.type === "multiple-choice" || q.type === "select-all"
+      const options = q.type === "multiple-choice" || q.type === "select-all" || q.type === "scenario"
         ? JSON.stringify((q as any).options || [])
         : q.type === "order"
         ? JSON.stringify((q as any).items || [])
         : "[]";
       
-      const correctAnswer = q.type === "multiple-choice"
+      const correctAnswer = q.type === "multiple-choice" || q.type === "scenario"
         ? JSON.stringify((q as any).correctAnswer || "")
         : q.type === "fill-in-blank"
         ? JSON.stringify((q as any).answers || [])
@@ -82,6 +82,10 @@ async function seed() {
         : q.type === "order"
         ? JSON.stringify((q as any).correctOrder || [])
         : "[]";
+
+      const hint = q.type === "scenario"
+        ? (q as any).tradeOffs || null
+        : (q as any).hint || null;
 
       await db
         .insert(questions)
@@ -93,7 +97,7 @@ async function seed() {
           options,
           correctAnswer,
           explanation: q.explanation,
-          hint: (q as any).hint || null,
+          hint,
           wordBank: (q as any).wordBank ? JSON.stringify((q as any).wordBank) : null,
           difficulty: q.difficulty,
         })

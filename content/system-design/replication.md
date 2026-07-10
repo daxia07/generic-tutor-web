@@ -45,11 +45,16 @@ explanation: "Synchronous replication waits for all replicas to confirm the writ
 difficulty: 1
 
 ### Q2
-type: fill-in-blank
-stem: "The delay between a write on the primary and its propagation to a replica is called replication ______."
-answers:
-  - "lag"
-explanation: "Replication lag is the time difference between primary and replica data states."
+type: scenario
+stem: "Your application writes to a primary database and reads from a replica. A user writes a comment but immediately sees the page without their comment. What consistency model is this, and how do you fix it?"
+options:
+  - A: Strong consistency — switch to synchronous replication
+  - B: Eventual consistency with replication lag — read from primary for recently-written data
+  - C: Weak consistency — add a caching layer
+  - D: Causal consistency — use vector clocks
+correct: B
+explanation: "Asynchronous replication introduces lag between primary and replica. The fix is 'read-your-writes' consistency: route reads for a user's own data to the primary, or wait for replication catch-up."
+trade_offs: "Reading from primary adds load to one server. For global apps, you can use session stickiness or replication wait with a timeout instead."
 difficulty: 2
 
 ### Q3

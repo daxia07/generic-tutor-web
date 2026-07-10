@@ -73,6 +73,8 @@ async function run() {
         userAnswer = JSON.stringify(q.answers);
       } else if (q.type === "select-all") {
         userAnswer = JSON.stringify(q.correctAnswers);
+      } else if (q.type === "scenario") {
+        userAnswer = q.correctAnswer;
       } else if (q.type === "order") {
         userAnswer = JSON.stringify(q.correctOrder);
       }
@@ -84,6 +86,7 @@ async function run() {
         correct: isCorrect,
         userAnswer,
         correctAnswer: q.type === "multiple-choice" ? q.correctAnswer :
+                       q.type === "scenario" ? q.correctAnswer :
                        q.type === "fill-in-blank" ? JSON.stringify(q.answers) :
                        q.type === "select-all" ? JSON.stringify(q.correctAnswers) :
                        JSON.stringify(q.correctOrder),

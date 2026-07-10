@@ -43,11 +43,16 @@ explanation: "CQRS = Command Query Responsibility Segregation — separating rea
 difficulty: 1
 
 ### Q2
-type: fill-in-blank
-stem: "In CQRS, the ______ model handles creating and updating data, while the query model handles reads."
-answers:
-  - "command"
-explanation: "Commands handle writes (create/update/delete). Queries handle reads. They use separate models."
+type: scenario
+stem: "Your analytics dashboard runs heavy read queries that slow down the order processing writes on the same database. How do you optimize read and write workloads independently?"
+options:
+  - A: Add more database indexes to speed up both
+  - B: Use CQRS — separate the write model (normalized) from the read model (denormalized views)
+  - C: Increase database server RAM
+  - D: Use a caching layer for reads only
+correct: B
+explanation: "CQRS splits the data model: the command side handles writes with normalized tables optimized for consistency, while the query side uses denormalized read models optimized for fast lookups. Each can scale independently."
+trade_offs: "CQRS adds complexity: you must keep read models in sync with write models (eventual consistency), and the infrastructure for two data stores is more expensive to operate."
 difficulty: 2
 
 ### Q3

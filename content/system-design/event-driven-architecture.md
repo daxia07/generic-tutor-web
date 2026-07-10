@@ -60,9 +60,14 @@ explanation: "Event notification, event-carried state transfer, and event sourci
 difficulty: 3
 
 ### Q3
-type: fill-in-blank
-stem: "The pattern where all changes to application state are stored as a sequence of events is called event ______."
-answers:
-  - "sourcing"
-explanation: "Event sourcing persists all state changes as immutable events, enabling complete state reconstruction."
+type: scenario
+stem: "Your financial compliance team requires a complete, immutable audit trail of every state change in the order processing system. Which pattern provides this?"
+options:
+  - A: Command Query Responsibility Segregation (CQRS)
+  - B: Event Sourcing — store every state change as an immutable event
+  - C: Change Data Capture (CDC) — log database changes
+  - D: Write-ahead logging (WAL)
+correct: B
+explanation: "Event Sourcing persists every domain event (OrderCreated, PaymentReceived, OrderShipped) as the source of truth. Current state is derived by replaying events. This gives a full, immutable audit trail."
+trade_offs: "Event Sourcing adds complexity: event schema evolution, snapshotting for performance, and eventual consistency between write and read models. Use it only when audit trails are genuinely required."
 difficulty: 2

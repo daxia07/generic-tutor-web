@@ -60,9 +60,14 @@ explanation: "All four are NoSQL database types: Document (MongoDB), Key-value (
 difficulty: 2
 
 ### Q3
-type: fill-in-blank
-stem: "SQL databases enforce a fixed ______ that defines the structure of data in tables."
-answers:
-  - "schema"
-explanation: "SQL databases require a predefined schema (table structure). NoSQL databases are typically schema-flexible."
-difficulty: 1
+type: scenario
+stem: "Your startup builds a feature where each user can store custom attributes (different fields per user). SQL requires ALTER TABLE for new columns. Which database approach best fits?"
+options:
+  - A: SQL with a fixed schema — enforce structure for consistency
+  - B: NoSQL document store — flexible schema handles varying fields naturally
+  - C: SQL with EAV pattern — entity-attribute-value rows
+  - D: Graph database — model attributes as edge properties
+correct: B
+explanation: "NoSQL document stores (MongoDB, DynamoDB) allow each record to have different fields without schema migrations. This is their core advantage for semi-structured or evolving data."
+trade_offs: "EAV pattern works in SQL but makes queries complex and slow. Document stores sacrifice SQL's JOIN power and transaction guarantees across documents."
+difficulty: 2

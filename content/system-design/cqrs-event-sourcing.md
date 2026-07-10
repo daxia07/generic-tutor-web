@@ -151,12 +151,16 @@ explanation: "Event Sourcing stores all state changes as events. Current state i
 difficulty: 2
 
 ### Q2
-type: fill-in-blank
-stem: "A ______ in event sourcing is a snapshot of the current state, used to avoid replaying all events from the beginning."
-answers:
-  - "snapshot"
-  - "checkpoint"
-explanation: "Snapshots periodically capture the current state to avoid replaying the full event history."
+type: scenario
+stem: "Your event-sourced Order aggregate has 10M events. Replaying all events on server restart takes 30 minutes. How do you reduce startup time without losing auditability?"
+options:
+  - A: Delete old events that are no longer relevant
+  - B: Take periodic snapshots — save the computed state at a point in time, then only replay events after that point
+  - C: Store fewer events by coalescing multiple events into one
+  - D: Move to a relational database instead
+correct: B
+explanation: "Snapshots capture the aggregate state at a specific event sequence number. On load, apply the snapshot then replay only events after that point. All events are still stored for audit — snapshots are a performance optimization."
+trade_offs: "Snapshots add storage overhead and must be regenerated if your event schema changes. Snapshot frequency is a tuning trade-off: more snapshots = faster loads but more storage."
 difficulty: 3
 
 ### Q3
