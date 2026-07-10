@@ -1,6 +1,6 @@
 import puppeteer, { Browser, Page } from "puppeteer";
 
-const BASE_URL = "http://localhost:3099";
+const BASE_URL = process.env.BASE_URL || "http://localhost:3099";
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 interface TestResult {

@@ -1,7 +1,7 @@
 // API-level E2E test — verify the complete session flow via HTTP
 import puppeteer from "puppeteer";
 
-const BASE_URL = "http://localhost:3099";
+const BASE_URL = process.env.BASE_URL || "http://localhost:3099";
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 async function run() {
