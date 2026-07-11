@@ -146,8 +146,7 @@ export async function buildSession(
  */
 export async function processSessionResult(
   sessionId: string,
-  answerRecords: AnswerRecord[],
-  heartsRemaining: number
+  answerRecords: AnswerRecord[]
 ): Promise<SessionResult> {
   const correctCount = answerRecords.filter((a) => a.correct).length;
   const totalQuestions = answerRecords.length;
@@ -222,7 +221,7 @@ export async function processSessionResult(
       correctCount,
       accuracy,
       xpEarned,
-      heartsRemaining,
+      heartsRemaining: 5,
       completed: 1,
     })
     .where(eq(sessions.id, sessionId));
@@ -297,7 +296,6 @@ export async function processSessionResult(
     accuracy,
     correctCount,
     totalQuestions,
-    heartsRemaining,
     conceptsUpdated,
     streakUpdated,
     totalXp: updatedStats[0]?.totalXp ?? xpEarned,

@@ -141,7 +141,6 @@ export interface SessionResult {
   accuracy: number;
   correctCount: number;
   totalQuestions: number;
-  heartsRemaining: number;
   conceptsUpdated: { conceptId: string; newStatus: string }[];
   streakUpdated: boolean;
   totalXp: number;
@@ -156,7 +155,6 @@ export type SessionState = "intro" | "question" | "feedback" | "complete";
 
 export interface SessionProgress {
   currentIndex: number;
-  hearts: number;
   answers: AnswerRecord[];
   currentAnswer: string | string[] | null;
   isCorrect: boolean | null;

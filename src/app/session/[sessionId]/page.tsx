@@ -362,7 +362,7 @@ export default function SessionPage({ params }: SessionPageProps) {
           </motion.div>
         )}
 
-       </AnimatePresence>
-     </div>
-   );
+      </AnimatePresence>
+    </div>
+  );
 }

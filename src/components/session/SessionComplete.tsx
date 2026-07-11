@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Zap, Heart, Trophy, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
+import { Zap, Trophy, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
 import type { SessionResult } from "@/lib/types";
 
 interface SessionCompleteProps {
@@ -15,40 +15,36 @@ export function SessionComplete({ result, onContinue, nextSessionTitle }: Sessio
   const confettiRef = useRef(false);
 
   useEffect(() => {
-    // Trigger confetti on mount
     if (confettiRef.current) return;
     confettiRef.current = true;
 
-    if (result.heartsRemaining > 0) {
-      import("canvas-confetti").then((module) => {
-        const confetti = module.default || module;
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ["#58cc02", "#ffc800", "#1cb0f6", "#ff9600"],
-        });
-
-        // Second burst after delay
-        setTimeout(() => {
-          confetti({
-            particleCount: 50,
-            angle: 60,
-            spread: 55,
-            origin: { x: 0 },
-            colors: ["#58cc02", "#ffc800"],
-          });
-          confetti({
-            particleCount: 50,
-            angle: 120,
-            spread: 55,
-            origin: { x: 1 },
-            colors: ["#58cc02", "#ffc800"],
-          });
-        }, 300);
+    import("canvas-confetti").then((module) => {
+      const confetti = module.default || module;
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#58cc02", "#ffc800", "#1cb0f6", "#ff9600"],
       });
-    }
-  }, [result.heartsRemaining]);
+
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ["#58cc02", "#ffc800"],
+        });
+        confetti({
+          particleCount: 50,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ["#58cc02", "#ffc800"],
+        });
+      }, 300);
+    });
+  }, []);
 
   const isPerfect = result.accuracy === 100;
 
@@ -102,9 +98,9 @@ export function SessionComplete({ result, onContinue, nextSessionTitle }: Sessio
         </div>
 
         <div className="bg-[#fff0f0] rounded-xl p-3">
-          <Heart className="w-5 h-5 text-[#ff4b4b] mx-auto mb-1" />
-          <p className="text-xl font-bold text-[#ff4b4b]">{result.heartsRemaining}/5</p>
-          <p className="text-xs text-[#4b4b4b]/60">Hearts</p>
+          <CheckCircle2 className="w-5 h-5 text-[#58cc02] mx-auto mb-1" />
+          <p className="text-xl font-bold text-[#58cc02]">{result.correctCount}/{result.totalQuestions}</p>
+          <p className="text-xs text-[#4b4b4b]/60">Correct</p>
         </div>
       </div>
 

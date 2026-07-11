@@ -21,10 +21,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { sessionId, answers, heartsRemaining } = body as {
+    const { sessionId, answers } = body as {
       sessionId: string;
       answers: AnswerRecord[];
-      heartsRemaining: number;
     };
 
     if (!sessionId || !Array.isArray(answers)) {
@@ -34,11 +33,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await processSessionResult(
-      sessionId,
-      answers,
-      heartsRemaining
-    );
+    const result = await processSessionResult(sessionId, answers);
     return NextResponse.json(result);
   } catch (error) {
     console.error("Failed to process session result:", error);

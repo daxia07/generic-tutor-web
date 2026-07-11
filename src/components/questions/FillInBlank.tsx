@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, XCircle, HelpCircle } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import type { Question } from "@/lib/types";
 
 interface FillInBlankProps {
