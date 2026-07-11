@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Flame, Brain, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
+import LogoutButton from "@/components/LogoutButton";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -59,6 +60,7 @@ export default function RootLayout({
                 <Flame className="w-4 h-4" />
                 <span className="hidden sm:inline">Review</span>
               </Link>
+              <LogoutButton />
             </nav>
           </div>
         </header>
