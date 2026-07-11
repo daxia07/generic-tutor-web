@@ -1,5 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { COOKIE_NAME } from "@/lib/auth";
+
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
 
 export async function POST() {
   const res = NextResponse.json({ success: true });
@@ -8,6 +10,7 @@ export async function POST() {
     value: "",
     path: "/",
     maxAge: 0,
+    domain: COOKIE_DOMAIN,
   });
   return res;
 }

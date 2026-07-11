@@ -2,7 +2,8 @@ const AUTH_USER = "ming";
 const AUTH_PASS = "ping";
 const AUTH_SECRET = process.env.AUTH_SECRET || "tutor-local-dev";
 
-export const COOKIE_NAME = "tutor_auth";
+export const COOKIE_NAME = "mingli_auth";
+export const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
 
 async function computeToken(): Promise<string> {
   const data = new TextEncoder().encode(

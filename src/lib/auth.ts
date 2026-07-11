@@ -3,9 +3,10 @@ import { cookies } from "next/headers";
 
 const AUTH_USER = "ming";
 const AUTH_PASS = "ping";
-const COOKIE_NAME = "tutor_auth";
+const COOKIE_NAME = "mingli_auth";
 const COOKIE_MAX_AGE = 365 * 24 * 60 * 60;
 const AUTH_SECRET = process.env.AUTH_SECRET || "tutor-local-dev";
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
 
 function createToken(): string {
   return createHash("sha256")
@@ -31,6 +32,7 @@ export function authCookieOptions(): {
   httpOnly: boolean;
   sameSite: "lax" | "strict" | "none";
   secure: boolean;
+  domain?: string;
 } {
   return {
     name: COOKIE_NAME,
@@ -40,6 +42,7 @@ export function authCookieOptions(): {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.VERCEL === "1",
+    domain: COOKIE_DOMAIN,
   };
 }
 
