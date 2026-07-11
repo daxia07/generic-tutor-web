@@ -12,10 +12,8 @@ import type {
 } from "@/lib/types";
 import { gradeFromCorrectness } from "@/lib/sm2";
 import { ProgressBar } from "@/components/session/ProgressBar";
-import { HeartsDisplay } from "@/components/session/HeartsDisplay";
 import { SessionIntro } from "@/components/session/SessionIntro";
 import { SessionComplete } from "@/components/session/SessionComplete";
-import { SessionGameOver } from "@/components/session/SessionGameOver";
 import { MultipleChoice } from "@/components/questions/MultipleChoice";
 import { FillInBlank } from "@/components/questions/FillInBlank";
 import { SelectAll } from "@/components/questions/SelectAll";
@@ -32,7 +30,6 @@ export default function SessionPage({ params }: SessionPageProps) {
   const [sessionMeta, setSessionMeta] = useState<SessionMetadata | null>(null);
   const [state, setState] = useState<SessionState>("intro");
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [hearts, setHearts] = useState(5);
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
   const [result, setResult] = useState<SessionResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -109,7 +106,7 @@ export default function SessionPage({ params }: SessionPageProps) {
       const record = buildAnswerRecord(currentQuestion, userAnswer, isCorrect);
       processAnswer(record);
     },
-    [currentQuestion, hearts]
+    [currentQuestion]
   );
 
   // Handle answer from FillInBlank
@@ -123,7 +120,7 @@ export default function SessionPage({ params }: SessionPageProps) {
       );
       processAnswer(record);
     },
-    [currentQuestion, hearts]
+    [currentQuestion]
   );
 
   // Handle answer from SelectAll
@@ -138,7 +135,7 @@ export default function SessionPage({ params }: SessionPageProps) {
       );
       processAnswer(record);
     },
-    [currentQuestion, hearts]
+    [currentQuestion]
   );
 
   // Handle answer from OrderArrange
@@ -153,21 +150,12 @@ export default function SessionPage({ params }: SessionPageProps) {
       );
       processAnswer(record);
     },
-    [currentQuestion, hearts]
+    [currentQuestion]
   );
 
   // Core answer processing logic
   function processAnswer(record: AnswerRecord) {
     setAnswers((prev) => [...prev, record]);
-
-    if (!record.correct) {
-      const newHearts = hearts - 1;
-      setHearts(newHearts);
-      if (newHearts <= 0) {
-        setState("game-over");
-        return;
-      }
-    }
 
     // Show feedback then enable continue
     setReadyForNext(false);
@@ -191,7 +179,6 @@ export default function SessionPage({ params }: SessionPageProps) {
         body: JSON.stringify({
           sessionId: sessionMeta.sessionId,
           answers: finalAnswers,
-          heartsRemaining: hearts,
         }),
       })
         .then((r) => r.json())
@@ -205,26 +192,13 @@ export default function SessionPage({ params }: SessionPageProps) {
       setCurrentIndex(nextIndex);
       setReadyForNext(false);
     }
-  }, [sessionMeta, currentIndex, totalQuestions, answers, hearts]);
+  }, [sessionMeta, currentIndex, totalQuestions, answers]);
 
   const handleStart = useCallback(() => {
     setState("question");
   }, []);
 
   const handleContinueLearning = useCallback(() => {
-    router.push("/");
-  }, [router]);
-
-  const handleRetry = useCallback(() => {
-    setState("intro");
-    setCurrentIndex(0);
-    setHearts(5);
-    setAnswers([]);
-    setResult(null);
-    setReadyForNext(false);
-  }, []);
-
-  const handleGoHome = useCallback(() => {
     router.push("/");
   }, [router]);
 
@@ -272,29 +246,15 @@ export default function SessionPage({ params }: SessionPageProps) {
     );
   }
 
-  // Build mistakes list for game-over
-  const mistakes =
-    state === "game-over"
-      ? answers
-          .filter((a) => !a.correct)
-          .map((a) => ({
-            questionId: a.questionId,
-            stem: a.questionId, // We don't have stems in AnswerRecord, use ID
-            userAnswer: a.userAnswer,
-            correctAnswer: a.correctAnswer,
-          }))
-      : [];
-
   return (
     <div className="max-w-lg mx-auto">
-      {/* Header: progress + hearts (shown during questions) */}
+      {/* Header: progress bar (shown during questions) */}
       {state === "question" && (
         <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm pb-3 mb-4">
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <ProgressBar current={currentIndex + 1} total={totalQuestions} />
             </div>
-            <HeartsDisplay hearts={hearts} />
           </div>
         </div>
       )}
@@ -402,20 +362,7 @@ export default function SessionPage({ params }: SessionPageProps) {
           </motion.div>
         )}
 
-        {state === "game-over" && (
-          <motion.div
-            key="game-over"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <SessionGameOver
-              mistakes={mistakes}
-              onRetry={handleRetry}
-              onGoHome={handleGoHome}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+       </AnimatePresence>
+     </div>
+   );
 }

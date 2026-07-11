@@ -85,11 +85,18 @@ export function FillInBlank({
 
     const isCorrect = results.every((r) => r);
     const isPartial = !isCorrect && results.some((r) => r);
-    // For SM-2: fully correct = 5, partial = 3, all wrong = 1
     onAnswer(
       filledBlanks.map((b) => b || ""),
       isCorrect || isPartial ? isCorrect : false
     );
+  }
+
+  function handleSkip() {
+    if (submitted) return;
+    setFilledBlanks(answers.slice());
+    setBlankResults(answers.map(() => false));
+    setSubmitted(true);
+    onAnswer(answers, false);
   }
 
   // Split stem by ____ placeholders
@@ -193,14 +200,24 @@ export function FillInBlank({
         </div>
       )}
 
-      {/* Submit button */}
-      {!submitted && filledBlanks.every((b) => b !== null && b !== "") && (
-        <button
-          onClick={handleSubmit}
-          className="w-full rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]"
-        >
-          CHECK
-        </button>
+      {/* Submit / Skip buttons */}
+      {!submitted && (
+        <div className="space-y-2">
+          {filledBlanks.every((b) => b !== null && b !== "") && (
+            <button
+              onClick={handleSubmit}
+              className="w-full rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]"
+            >
+              CHECK
+            </button>
+          )}
+          <button
+            onClick={handleSkip}
+            className="w-full rounded-xl bg-[#e5e5e5] hover:bg-[#d4d4d4] text-[#4b4b4b] font-bold py-3 px-4 text-sm transition-colors"
+          >
+            SKIP
+          </button>
+        </div>
       )}
 
       {/* Feedback */}

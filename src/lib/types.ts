@@ -152,7 +152,7 @@ export interface SessionResult {
 // Session state machine
 // ---------------------------------------------------------------------------
 
-export type SessionState = "intro" | "question" | "feedback" | "game-over" | "complete";
+export type SessionState = "intro" | "question" | "feedback" | "complete";
 
 export interface SessionProgress {
   currentIndex: number;
