@@ -170,8 +170,8 @@ export default function SessionPage({ params }: SessionPageProps) {
 
     const nextIndex = currentIndex + 1;
     if (nextIndex >= totalQuestions) {
-      // Session complete — POST results
       setState("complete");
+      setReadyForNext(false);
       const finalAnswers = answers;
       fetch("/api/session", {
         method: "POST",

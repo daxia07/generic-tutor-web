@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -44,3 +45,18 @@ jobs:
           git add content/
           git commit -m "bot: refresh content based on progress analytics"
           git push origin content-refresh --force
+
+      - name: Create or update PR
+        if: steps.changes.outputs.count > 0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base main \
+            --head content-refresh \
+            --title "bot: content refresh $(date -u +%Y-%m-%d)" \
+            --body "Automated content refresh based on progress analytics. Review changes then merge and re-seed DB." \
+            --label "content" \
+          || gh pr edit \
+            --title "bot: content refresh $(date -u +%Y-%m-%d)" \
+            --body "Automated content refresh based on progress analytics. Review changes then merge and re-seed DB."

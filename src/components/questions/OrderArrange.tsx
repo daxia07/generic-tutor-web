@@ -8,13 +8,11 @@ import type { Question } from "@/lib/types";
 interface OrderArrangeProps {
   question: Question;
   onAnswer: (orderedItems: string[], isCorrect: boolean, isPartial: boolean) => void;
-  disabled?: boolean;
 }
 
 export function OrderArrange({
   question,
   onAnswer,
-  disabled = false,
 }: OrderArrangeProps) {
   if (question.type !== "order") return null;
 
@@ -46,7 +44,6 @@ export function OrderArrange({
     if (submitted) return;
     setSubmitted(true);
 
-    // Check each position against correctOrder (correctOrder has indices into the original items array)
     const results = orderedItems.map((item, i) => {
       const correctItemIndex = correctOrder[i];
       return items[correctItemIndex] === item;
@@ -55,11 +52,19 @@ export function OrderArrange({
     setItemResults(results);
 
     const isCorrect = results.every((r) => r);
-    // Off-by-1 check: if at most 1 item is in wrong position, it's partial
     const wrongCount = results.filter((r) => !r).length;
     const isPartial = !isCorrect && wrongCount <= 2;
 
     onAnswer(orderedItems, isCorrect, isPartial);
+  }
+
+  function handleSkip() {
+    if (submitted) return;
+    const correctArr = correctOrder.map((idx) => items[idx]);
+    setOrderedItems(correctArr);
+    setItemResults(correctArr.map(() => false));
+    setSubmitted(true);
+    onAnswer(correctArr, false, false);
   }
 
   return (
@@ -141,12 +146,20 @@ export function OrderArrange({
       </div>
 
       {!submitted && (
-        <button
-          onClick={handleSubmit}
-          className="w-full rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]"
-        >
-          CHECK
-        </button>
+        <div className="space-y-2">
+          <button
+            onClick={handleSubmit}
+            className="w-full rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]"
+          >
+            CHECK
+          </button>
+          <button
+            onClick={handleSkip}
+            className="w-full rounded-xl bg-[#e5e5e5] hover:bg-[#d4d4d4] text-[#4b4b4b] font-bold py-3 px-4 text-sm transition-colors"
+          >
+            SKIP
+          </button>
+        </div>
       )}
 
       {submitted && explanation && (

@@ -8,13 +8,11 @@ import type { Question } from "@/lib/types";
 interface SelectAllProps {
   question: Question;
   onAnswer: (selectedIds: string[], isCorrect: boolean, isPartial: boolean) => void;
-  disabled?: boolean;
 }
 
 export function SelectAll({
   question,
   onAnswer,
-  disabled = false,
 }: SelectAllProps) {
   if (question.type !== "select-all") return null;
 
@@ -39,13 +37,19 @@ export function SelectAll({
     const selectedArr = Array.from(selected);
     const correctSet = new Set(correctAnswers);
 
-    // Fully correct: selected all correct AND no incorrect
     const allCorrectSelected = correctAnswers.every((id) => selected.has(id));
     const noIncorrectSelected = selectedArr.every((id) => correctSet.has(id));
     const isCorrect = allCorrectSelected && noIncorrectSelected;
-    const isPartial = allCorrectSelected && !noIncorrectSelected; // has all correct but also some wrong
+    const isPartial = allCorrectSelected && !noIncorrectSelected;
 
     onAnswer(selectedArr, isCorrect, isPartial);
+  }
+
+  function handleSkip() {
+    if (submitted) return;
+    setSelected(new Set(correctAnswers));
+    setSubmitted(true);
+    onAnswer([], false, false);
   }
 
   return (
@@ -131,13 +135,23 @@ export function SelectAll({
         })}
       </div>
 
-      {!submitted && selected.size > 0 && (
-        <button
-          onClick={handleSubmit}
-          className="w-full rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]"
-        >
-          CHECK
-        </button>
+      {!submitted && (
+        <div className="space-y-2">
+          {selected.size > 0 && (
+            <button
+              onClick={handleSubmit}
+              className="w-full rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]"
+            >
+              CHECK
+            </button>
+          )}
+          <button
+            onClick={handleSkip}
+            className="w-full rounded-xl bg-[#e5e5e5] hover:bg-[#d4d4d4] text-[#4b4b4b] font-bold py-3 px-4 text-sm transition-colors"
+          >
+            SKIP
+          </button>
+        </div>
       )}
 
       {submitted && explanation && (

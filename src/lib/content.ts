@@ -226,13 +226,22 @@ function parseQuestions(text: string): Question[] {
         break;
       }
       case "fill-in-blank": {
-        const answers = qData.answers || [];
+        const rawAnswers = qData.answers || [];
+        const blankCount = (stem.match(/_{2,}/g) || []).length || 1;
+        const answers: string[][] = [];
+        if (blankCount === 1) {
+          answers.push(Array.isArray(rawAnswers) ? rawAnswers : [rawAnswers]);
+        } else {
+          for (const a of rawAnswers) {
+            answers.push([a]);
+          }
+        }
         question = {
           id: qId,
           conceptId,
           type: "fill-in-blank",
           stem,
-          blanks: answers.length,
+          blanks: blankCount,
           answers,
           explanation,
           difficulty,

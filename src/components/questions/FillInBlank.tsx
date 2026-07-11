@@ -8,13 +8,11 @@ import type { Question } from "@/lib/types";
 interface FillInBlankProps {
   question: Question;
   onAnswer: (answer: string[], isCorrect: boolean) => void;
-  disabled?: boolean;
 }
 
 export function FillInBlank({
   question,
   onAnswer,
-  disabled = false,
 }: FillInBlankProps) {
   if (question.type !== "fill-in-blank") return null;
 
@@ -77,7 +75,10 @@ export function FillInBlank({
 
     const results = filledBlanks.map((blank, i) => {
       if (!blank) return false;
-      return blank.trim().toLowerCase() === answers[i].trim().toLowerCase();
+      const alternatives = answers[i] || [];
+      return alternatives.some(
+        (a) => a.trim().toLowerCase() === blank.trim().toLowerCase()
+      );
     });
 
     setBlankResults(results);
@@ -93,10 +94,11 @@ export function FillInBlank({
 
   function handleSkip() {
     if (submitted) return;
-    setFilledBlanks(answers.slice());
+    const correctAnswers = answers.map((alt) => alt[0] || "");
+    setFilledBlanks(correctAnswers);
     setBlankResults(answers.map(() => false));
     setSubmitted(true);
-    onAnswer(answers, false);
+    onAnswer(correctAnswers, false);
   }
 
   // Split stem by ____ placeholders
@@ -140,7 +142,7 @@ export function FillInBlank({
                     <span>{filledBlanks[i]}</span>
                     {!blankResults[i] && (
                       <span className="text-[#58cc02] text-xs font-normal not-line-through">
-                        {answers[i]}
+                        {answers[i]?.[0] || ""}
                       </span>
                     )}
                   </span>

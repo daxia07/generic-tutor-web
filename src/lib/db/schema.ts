@@ -64,7 +64,7 @@ export const questions = sqliteTable(
     conceptId: text("concept_id")
       .notNull()
       .references(() => concepts.id, { onDelete: "cascade" }),
-    type: text("type").notNull(), // multiple-choice / fill-in-blank / select-all / order
+    type: text("type").notNull(), // multiple-choice / fill-in-blank / select-all / order / scenario
     stem: text("stem").notNull(),
     options: text("options").notNull().default("[]"), // JSON: [{id, text}] for MC/select-all, string[] for order
     correctAnswer: text("correct_answer").notNull(), // JSON: varies by type

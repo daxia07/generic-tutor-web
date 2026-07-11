@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
 import OpenAI from "openai";
 
 const CONTENT_DIR = path.join(process.cwd(), "content", "system-design");
@@ -42,7 +43,7 @@ interface ProgressData {
 const SYSTEM_PROMPT = `You are a system design interview content curator. Given progress analytics and existing question content, generate improved questions.
 
 Rules:
-1. Convert fill-in-blank questions to scenario-based unless the blank is a critical keyword (token bucket, idempotency key, strangler fig, consensus, Protobuf, snapshot, health check, composite index, exactly-once)
+1. Convert fill-in-blank questions to scenario-based unless the blank is a critical keyword (token bucket, idempotency key, strangler fig, consensus, Protobuf, snapshot, health check, composite index, exactly-once). When keeping fill-in-blank, list all acceptable answer variants (e.g. "half-open" and "half open") as separate items in the answers list.
 2. Add "scenario" type questions: present a real-world constraint, ask for architecture choice + justification
 3. Questions must have clear correct answers but test JUDGMENT not recall
 4. Each scenario question must include a "trade_offs" field explaining when the "correct" answer might not be optimal
@@ -55,7 +56,8 @@ Rules:
 
 Question type formats:
 - multiple-choice: type, stem, options (list of "X: text"), correct (single letter), explanation, difficulty
-- fill-in-blank: type, stem (with ______), answers (list), explanation, difficulty
+- fill-in-blank: type, stem (with ______), answers (list of alternative acceptable answers for the single blank), explanation, difficulty
+- If a question has multiple blanks, use multiple ______ in the stem and group answers per blank using nested lists
 - select-all: type, stem, options (list of "X: text"), correct (list of letters), explanation, difficulty
 - order: type, stem, items (list), correct_order (array of 0-based indices), explanation, difficulty
 - scenario: type, stem (real-world scenario), options (list of "X: text"), correct (single letter), explanation, trade_offs, difficulty
@@ -132,7 +134,7 @@ Analyze the progress data and propose content improvements. Focus on:
 1. Questions with high error rates — rewrite for clarity
 2. Zero-engagement concepts — add engaging scenario questions
 3. Too-easy questions — add harder follow-ups
-4. Fill-in-blank questions that test vocabulary recall — convert to scenario type
+4. Fill-in-blank questions that test vocabulary recall — convert to scenario type. For remaining fill-in-blanks, include all common answer variants
 
 Return only the JSON changes object.`;
 
@@ -211,6 +213,43 @@ Return only the JSON changes object.`;
     }
 
     applied.push(change);
+  }
+
+  // Validate that modified files still parse correctly
+  if (!DRY_RUN && applied.length > 0) {
+    const modifiedFiles = [...new Set(applied.map((c) => c.file.endsWith(".md") ? c.file : `${c.file}.md`))];
+    let parseErrors = 0;
+    for (const file of modifiedFiles) {
+      const fullPath = path.join(CONTENT_DIR, file);
+      try {
+        const raw = fs.readFileSync(fullPath, "utf-8");
+        const questionsSection = raw.match(/## Questions\n([\s\S]*)$/);
+        if (!questionsSection) {
+          console.warn(`  ⚠️  ${file}: no ## Questions section found`);
+          parseErrors++;
+          continue;
+        }
+        const qCount = (questionsSection[1].match(/^### Q\d+$/gm) || []).length;
+        const hasType = /^type:/gm.test(questionsSection[1]);
+        if (qCount === 0 || !hasType) {
+          console.warn(`  ⚠️  ${file}: ${qCount} questions, has type fields: ${hasType} — content may be malformed`);
+          parseErrors++;
+        } else {
+          console.log(`  ✓ ${file}: ${qCount} questions, format looks OK`);
+        }
+      } catch (err) {
+        console.error(`  ✗ ${file}: read error — ${err}`);
+        parseErrors++;
+      }
+    }
+    if (parseErrors > 0) {
+      console.error(`\n⚠️  ${parseErrors} file(s) had parse errors! Reverting changes.`);
+      for (const file of modifiedFiles) {
+        const fullPath = path.join(CONTENT_DIR, file);
+        execSync(`git checkout -- ${fullPath}`);
+      }
+      process.exit(1);
+    }
   }
 
   if (DRY_RUN) {

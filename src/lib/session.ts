@@ -329,20 +329,34 @@ function deserializeQuestion(
         difficulty: row.difficulty,
         isReview,
       };
-    case "fill-in-blank":
+    case "fill-in-blank": {
+      const blankCount = (row.stem.match(/_{2,}/g) || []).length || 1;
+      let parsedAnswers: string[][];
+      if (Array.isArray(correctAnswer) && Array.isArray(correctAnswer[0])) {
+        parsedAnswers = correctAnswer as string[][];
+      } else if (Array.isArray(correctAnswer)) {
+        if (blankCount === 1) {
+          parsedAnswers = [correctAnswer.map(String)];
+        } else {
+          parsedAnswers = correctAnswer.map((a: string) => [String(a)]);
+        }
+      } else {
+        parsedAnswers = [[String(correctAnswer)]];
+      }
       return {
         id: row.id,
         conceptId: row.conceptId,
         type: "fill-in-blank",
         stem: row.stem,
-        blanks: Array.isArray(correctAnswer) ? correctAnswer.length : 1,
-        answers: Array.isArray(correctAnswer) ? correctAnswer : [correctAnswer],
+        blanks: blankCount,
+        answers: parsedAnswers,
         explanation: row.explanation,
         difficulty: row.difficulty,
         hint: row.hint || undefined,
         wordBank,
         isReview,
       };
+    }
     case "select-all":
       return {
         id: row.id,

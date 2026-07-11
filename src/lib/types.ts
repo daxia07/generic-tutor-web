@@ -79,7 +79,7 @@ export interface MultipleChoiceQuestion extends BaseQuestion {
 export interface FillInBlankQuestion extends BaseQuestion {
   type: "fill-in-blank";
   blanks: number;
-  answers: string[];
+  answers: string[][]; // answers[blankIndex] = list of acceptable alternatives
   hint?: string;
   wordBank?: string[];
 }

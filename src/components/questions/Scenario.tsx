@@ -8,23 +8,17 @@ import type { Question } from "@/lib/types";
 interface ScenarioProps {
   question: Question;
   onAnswer: (answer: string, isCorrect: boolean) => void;
-  disabled?: boolean;
-  showFeedback?: boolean;
-  userAnswer?: string | null;
 }
 
 export function Scenario({
   question,
   onAnswer,
-  disabled = false,
-  showFeedback = false,
-  userAnswer = null,
 }: ScenarioProps) {
   if (question.type !== "scenario") return null;
 
   const { stem, options, correctAnswer, explanation, tradeOffs } = question;
-  const [selected, setSelected] = useState<string | null>(userAnswer);
-  const [submitted, setSubmitted] = useState(showFeedback);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   function handleSelect(optionId: string) {
     if (submitted) return;
@@ -36,6 +30,13 @@ export function Scenario({
     const isCorrect = selected === correctAnswer;
     setSubmitted(true);
     onAnswer(selected, isCorrect);
+  }
+
+  function handleSkip() {
+    if (submitted) return;
+    setSelected(correctAnswer);
+    setSubmitted(true);
+    onAnswer(correctAnswer, false);
   }
 
   return (
@@ -98,13 +99,23 @@ export function Scenario({
         })}
       </div>
 
-      {!submitted && selected && (
-        <button
-          onClick={handleSubmit}
-          className="w-full rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]"
-        >
-          CHECK
-        </button>
+      {!submitted && (
+        <div className="space-y-2">
+          {selected && (
+            <button
+              onClick={handleSubmit}
+              className="w-full rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]"
+            >
+              CHECK
+            </button>
+          )}
+          <button
+            onClick={handleSkip}
+            className="w-full rounded-xl bg-[#e5e5e5] hover:bg-[#d4d4d4] text-[#4b4b4b] font-bold py-3 px-4 text-sm transition-colors"
+          >
+            SKIP
+          </button>
+        </div>
       )}
 
       {submitted && explanation && (
