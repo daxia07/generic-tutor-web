@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Flame, Brain, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
+import SWRegister from "@/components/SWRegister";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,9 +16,37 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#58cc02",
+};
+
 export const metadata: Metadata = {
   title: "Tutor — System Design",
   description: "Duolingo-style spaced repetition for system design interviews",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Tutor",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/icons/icon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
@@ -30,8 +59,11 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#f7f7f7]">
-        {/* Top bar */}
+      <head>
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
+      <body className="min-h-full flex flex-col bg-[#f7f7f7] overscroll-none">
         <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
           <div className="max-w-4xl mx-auto flex h-14 items-center justify-between px-4">
             <Link href="/" className="flex items-center gap-2 font-bold text-lg">
@@ -65,10 +97,11 @@ export default function RootLayout({
           </div>
         </header>
 
-        {/* Main content */}
         <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-6">
           {children}
         </main>
+
+        <SWRegister />
       </body>
     </html>
   );

@@ -330,7 +330,7 @@ function parseQuestionKeyValue(text: string): Record<string, any> | null {
     // List item (indented with -)
     const listMatch = line.match(/^\s+-\s+(.+)/);
     if (listMatch && inList) {
-      listItems.push(listMatch[1].trim());
+      listItems.push(listMatch[1].trim().replace(/^["']|["']$/g, ""));
       continue;
     }
     

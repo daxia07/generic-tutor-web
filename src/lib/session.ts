@@ -333,15 +333,15 @@ function deserializeQuestion(
       const blankCount = (row.stem.match(/_{2,}/g) || []).length || 1;
       let parsedAnswers: string[][];
       if (Array.isArray(correctAnswer) && Array.isArray(correctAnswer[0])) {
-        parsedAnswers = correctAnswer as string[][];
+        parsedAnswers = (correctAnswer as string[][]).map(arr => arr.map(stripQuotes));
       } else if (Array.isArray(correctAnswer)) {
         if (blankCount === 1) {
-          parsedAnswers = [correctAnswer.map(String)];
+          parsedAnswers = [correctAnswer.map((a: string) => stripQuotes(String(a)))];
         } else {
-          parsedAnswers = correctAnswer.map((a: string) => [String(a)]);
+          parsedAnswers = correctAnswer.map((a: string) => [stripQuotes(String(a))]);
         }
       } else {
-        parsedAnswers = [[String(correctAnswer)]];
+        parsedAnswers = [[stripQuotes(String(correctAnswer))]];
       }
       return {
         id: row.id,
@@ -407,6 +407,10 @@ function deserializeQuestion(
         isReview,
       };
   }
+}
+
+function stripQuotes(s: string): string {
+  return s.replace(/^["']+|["']+$/g, "");
 }
 
 function shuffleArray<T>(array: T[]): T[] {
