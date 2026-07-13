@@ -249,3 +249,66 @@ correct:
   - D
 explanation: "Cross-border payments must handle FX rates, regulations (KYC/AML), settlement delays, and local payment method preferences."
 difficulty: 2
+
+### Q4
+type: fill-in-blank
+stem: "The pattern of using at-least-once delivery combined with idempotent processing to achieve exactly-once semantics is called ______-once processing."
+answers:
+  - "exactly"
+  - "effectively exactly"
+explanation: "Exactly-once semantics are achieved by combining at-least-once delivery with idempotent receivers. True exactly-once is impossible in distributed systems, but this combination is effectively exactly-once."
+difficulty: 2
+
+### Q5
+type: select-all
+stem: "Which mechanisms help ensure exactly-once payment processing?"
+options:
+  - A: Database unique constraint on idempotency_key
+  - B: Message deduplication in the message queue
+  - C: Client-side retry without idempotency key
+  - D: Idempotency key stored in Redis with TTL
+correct:
+  - A
+  - B
+  - D
+explanation: "Unique constraints prevent duplicate database entries (A). Message queue deduplication prevents redelivery (B). Redis-stored idempotency keys enable fast duplicate detection (D). Client retries without idempotency keys (C) risk creating duplicates."
+difficulty: 2
+
+### Q6
+type: scenario
+stem: "Step 1: A merchant initiates a $1,000 USD → EUR payment. Step 2: The FX service quotes a rate of 0.92 and returns a lock_id valid for 30 seconds. Step 3: The payment service takes 15 seconds to validate and starts processing at the locked rate. Step 4: Between the quote and execution, the actual market rate dropped to 0.89. What happens and why is rate locking important?"
+options:
+  - A: The payment executes at 0.92 — rate locking protects the merchant from rate changes during the transaction window
+  - B: The payment executes at 0.89 — the system always uses the latest market rate
+  - C: The payment is rejected — the rate changed so the lock is invalid
+  - D: The payment is queued — it waits for the rate to return to 0.92
+correct: A
+explanation: "Rate locking guarantees the quoted rate for the lock duration (30s). The merchant receives the quoted 0.92 rate regardless of market movements. This is essential for predictable cross-border payments."
+trade_offs: "The payment provider absorbs the rate difference (0.92 vs 0.89 market), creating FX risk. Shorter lock durations reduce this risk but increase the chance of lock expiry during slow processing. This is a core business trade-off in payment systems."
+difficulty: 3
+
+### Q7
+type: scenario
+stem: "Step 1: The payment service uses a saga pattern to coordinate across FX Service, Ledger Service, and Notification Service. Step 2: The Ledger Service debits the source account but the FX Service fails before crediting the target account. Step 3: The system is now in an inconsistent state — money has been debited but not credited. What should happen next?"
+options:
+  - A: Nothing — eventual consistency will resolve it
+  - B: The saga orchestrator should trigger a compensating transaction to reverse the ledger debit
+  - C: Manually review and fix the inconsistency
+  - D: Retry the FX Service call indefinitely until it succeeds
+correct: B
+explanation: "The saga pattern defines compensating transactions for each step. When FX Service fails after Ledger debit, the orchestrator triggers a compensating transaction (credit back the debit) to restore consistency."
+trade_offs: "Compensating transactions add complexity — each step needs a defined rollback. Manual review (C) doesn't scale. Indefinite retry (D) could leave the debit pending forever. Eventual consistency (A) is unacceptable for financial data."
+difficulty: 4
+
+### Q8
+type: scenario
+stem: "Step 1: Your payment gateway must achieve 99.99% availability (52 min downtime/year). Step 2: A database failover takes 30 seconds during which no payments can be processed. Step 3: At 10,000 TPS peak, a 30-second failover means 300,000 failed payments. Step 4: How should you architect the database layer to minimize the impact of failovers?"
+options:
+  - A: Use a single primary with synchronous replication — failover is seamless
+  - B: Use multi-primary replication so writes can continue on any node during failover
+  - C: Use a primary-replica setup with connection pooling and automatic failover, plus a queue to buffer writes during the failover window
+  - D: Accept the 30-second outage — 300K failed payments is within SLA
+correct: C
+explanation: "Buffering writes in a message queue during failover ensures no payments are lost — they are processed once the new primary is ready. Connection pooling with automatic failover minimizes the failover window."
+trade_offs: "Multi-primary (B) introduces write conflict resolution complexity. Synchronous replication (A) adds latency to every write and still requires failover time. Queueing (C) adds eventual consistency during the failover window but guarantees no data loss."
+difficulty: 4

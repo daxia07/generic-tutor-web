@@ -68,3 +68,69 @@ options:
 correct: C
 explanation: "A single S3 object can be up to 5 TB. Larger uploads must use multipart upload."
 difficulty: 2
+
+### Q4
+type: fill-in-blank
+stem: "A ______ is a temporary URL that grants time-limited access to a private object in blob storage without exposing the storage credentials."
+answers:
+  - "pre-signed URL"
+  - "presigned URL"
+  - "pre signed URL"
+  - "signed URL"
+  - "SAS token"
+  - "shared access signature"
+explanation: "Pre-signed URLs (S3) or SAS tokens (Azure) grant temporary access to private objects. The URL contains a signature that expires after a set time, allowing clients to download/upload directly without needing storage account credentials."
+difficulty: 2
+
+### Q5
+type: select-all
+stem: "Which of the following are true about blob storage compared to a file system?"
+options:
+  - A: Objects are immutable — you replace them, not modify in place
+  - B: Blob storage supports hierarchical directory listing natively
+  - C: Object keys can simulate directories using prefix delimiters (e.g., /)
+  - D: Blob storage is optimized for small, frequent random reads
+correct:
+  - A
+  - C
+explanation: "Blob storage objects are immutable (A) and use prefix delimiters to simulate directories (C). There is no native hierarchical directory system (B is false), and blob storage is optimized for large objects, not small frequent reads (D is false — use a database for that)."
+difficulty: 2
+
+### Q6
+type: scenario
+stem: "Your photo-sharing app lets users upload images. Currently, your backend receives the upload, then forwards it to S3. This creates a bottleneck — your servers are spending bandwidth and CPU on file transfer. Step 1: Identify the architectural inefficiency. Step 2: Propose a solution that removes your server from the data path. How do you fix this?"
+options:
+  - A: Upgrade to bigger servers with more bandwidth
+  - B: Use pre-signed URLs — the client uploads directly to S3 using a temporary signed URL, bypassing your server entirely
+  - C: Store images in the application database as BLOBs
+  - D: Use a message queue to buffer uploads
+correct: B
+explanation: "Pre-signed URLs allow clients to upload directly to S3. Your server only generates the signed URL (a lightweight API call), and the client uploads the file straight to S3. This eliminates the server from the data path, saving bandwidth and reducing latency."
+trade_offs: "Direct uploads bypass your server, so you lose the ability to validate file content before it's stored. You must use S3 event notifications (e.g., Lambda trigger on object creation) to validate, resize, or scan uploads after they arrive. Client-side file size limits should also be enforced."
+difficulty: 3
+
+### Q7
+type: scenario
+stem: "Your data analytics pipeline stores daily log files in S3. Each file is 500 MB and grows as traffic increases. Your upload script occasionally fails partway through, leaving corrupted partial files. Step 1: Identify why partial uploads corrupt the object. Step 2: Determine the upload strategy that handles failures gracefully. Step 3: Explain how it enables resumption. What do you implement?"
+options:
+  - A: Retry the full upload on failure until it succeeds
+  - B: Use multipart upload — split the file into chunks, upload in parallel, and any failed chunk can be retried independently; the object is only assembled after all parts complete
+  - C: Compress the file before uploading to reduce failure probability
+  - D: Use S3 Transfer Acceleration to speed up the upload
+correct: B
+explanation: "Multipart upload splits large files into parts (minimum 5 MB each except the last). Parts upload in parallel and can be retried individually on failure. The object only becomes visible after the complete multipart upload command is issued, preventing partial/corrupted objects."
+trade_offs: "Multipart upload has overhead for small files (not worth it under ~100 MB). Incomplete multipart uploads consume storage and incur charges — you must configure lifecycle rules to abort incomplete uploads after a timeout. Part count has a limit (10,000 parts)."
+difficulty: 3
+
+### Q8
+type: scenario
+stem: "Your video platform serves 50 TB of content per month directly from S3. Your AWS bill shows high egress charges. The product team wants to reduce costs. Step 1: Identify why egress is expensive. Step 2: Propose an architecture that reduces S3 egress while improving user experience. Step 3: Consider cache invalidation for content updates. What do you recommend?"
+options:
+  - A: Move to a cheaper storage provider
+  - B: Put a CDN (e.g., CloudFront) in front of S3 — cache popular content at edge locations, reducing S3 egress and improving latency for users
+  - C: Compress all videos to smaller sizes
+  - D: Switch to archive tier for all content
+correct: B
+explanation: "A CDN caches content at edge locations worldwide. Users fetch from the nearest edge cache instead of S3 directly. This reduces S3 egress charges (CDN-to-origin is cheaper than user-to-origin at scale) and dramatically improves latency."
+trade_offs: "CDN adds a caching layer that must be invalidated when content changes. Cache invalidation strategies (TTL expiry vs explicit invalidation) trade consistency for cost. CDN has its own egress pricing — model the total cost carefully. For rarely-accessed content, CDN cache miss rates are high and you pay for both CDN and S3 egress."
+difficulty: 4

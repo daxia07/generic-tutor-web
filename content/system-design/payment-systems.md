@@ -206,3 +206,67 @@ correct:
   - C
 explanation: "Payment systems need idempotency (no double charges), auditability (transaction logs), and strong consistency (accurate balances). Eventual consistency is insufficient for money."
 difficulty: 2
+
+### Q4
+type: fill-in-blank
+stem: "The process of matching internal transaction records with bank statements to detect discrepancies is called ______."
+answers:
+  - "reconciliation"
+  - "payment reconciliation"
+  - "bank reconciliation"
+explanation: "Reconciliation compares internal ledger entries against bank statements, flagging mismatches caused by network failures, timing differences, or fees."
+difficulty: 2
+
+### Q5
+type: select-all
+stem: "Which payment rails are considered local (domestic) rails rather than international messaging networks?"
+options:
+  - A: SWIFT
+  - B: FPS
+  - C: ACH
+  - D: SEPA
+correct:
+  - B
+  - C
+  - D
+explanation: "FPS (UK), ACH (US), and SEPA (EU) are domestic payment networks — faster and cheaper. SWIFT is an international messaging network for cross-border payments."
+difficulty: 2
+
+### Q6
+type: scenario
+stem: "Step 1: A customer initiates a $500 payment. Step 2: The payment gateway sends the request to the acquirer, which authorizes it. Step 3: The merchant's system crashes before capturing the authorized funds. What is the state of the payment and what happens to the funds?"
+options:
+  - A: The payment is settled — the customer has been charged $500
+  - B: The payment is authorized but not captured — the funds are held on the customer's card but not transferred; authorization will expire after a period (typically 7 days)
+  - C: The payment is declined — the authorization is automatically reversed
+  - D: The payment is pending forever — the funds are in limbo
+correct: B
+explanation: "Authorization reserves funds on the customer's card but doesn't transfer them. Capture is the step that actually charges. If never captured, the authorization expires and the hold is released. This separation protects both merchant and customer."
+trade_offs: "Merchants must capture within the authorization window (usually 5-7 days) or the hold expires and funds are released. For physical goods that ship later, this means either capturing before shipping (risk to customer) or re-authorizing if shipping is delayed (extra processing)."
+difficulty: 3
+
+### Q7
+type: scenario
+stem: "Step 1: You're designing a cross-border payment from Australia (AUD) to the UK (GBP). Step 2: You can route via SWIFT or via local rails (FPS). Step 3: The payment is urgent and the amount is small ($200 equivalent). Which rail do you choose and why?"
+options:
+  - A: SWIFT — more reliable for international payments regardless of amount
+  - B: Local rails (FPS) — faster settlement and lower cost for small urgent payments within the same corridor
+  - C: Both — send via SWIFT for reliability and FPS for speed, then use whichever arrives first
+  - D: Neither — use cryptocurrency for instant settlement
+correct: B
+explanation: "For small, urgent cross-border payments to the UK, local rails like FPS offer near-instant settlement at low cost. A payment platform like Airwallex converts AUD→GBP, then delivers via FPS. SWIFT would take 1-5 days and cost more."
+trade_offs: "Local rails only work if you have local banking presence or a partner in the destination country. SWIFT has broader coverage but is slower and costlier. The payment rail selector must weigh corridor availability, amount, urgency, and cost for each transaction."
+difficulty: 3
+
+### Q8
+type: scenario
+stem: "Step 1: Your payment system uses event sourcing — every state change is stored as an immutable event. Step 2: A compliance audit requires you to prove that a specific payment went through the exact state transitions: Created → Authorized → Captured → Settled. Step 3: A bug caused one event to be recorded with an incorrect timestamp. How does event sourcing help you investigate and resolve this?"
+options:
+  - A: You can mutate the incorrect event directly in the event store to fix the timestamp
+  - B: You append a compensating event that corrects the record — the original event remains immutable, preserving the full audit trail including the correction
+  - C: You delete the incorrect event and re-insert it with the correct timestamp
+  - D: Event sourcing doesn't help — you need a separate audit log
+correct: B
+explanation: "Event sourcing's immutability means you never modify or delete events. Corrections are append-only compensating events. This preserves the complete history: the original event, the correction, and the reason — exactly what auditors need."
+trade_offs: "Append-only correction adds complexity when reading current state — the projection must replay all events including corrections. It also means the event store grows continuously and needs compaction/snapshot strategies for performance."
+difficulty: 4

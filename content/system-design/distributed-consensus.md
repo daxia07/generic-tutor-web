@@ -67,3 +67,66 @@ options:
 correct: B
 explanation: "Distributed consensus ensures all nodes agree on the same data/value, critical for consistency in distributed systems."
 difficulty: 1
+
+### Q4
+type: fill-in-blank
+stem: "A monotonically increasing token used to prevent a stale leader from issuing commands after a network partition heals is called a ______ token."
+answers:
+  - "fencing"
+  - "fence"
+explanation: "A fencing token is a number that increases every time a new leader is elected. Storage systems check the token and reject requests with lower numbers, ensuring a stale leader from a previous term cannot make changes."
+difficulty: 2
+
+### Q5
+type: select-all
+stem: "Which of the following are valid concerns when implementing a distributed lock?"
+options:
+  - A: Lock expiry — the lock holder may crash and never release the lock
+  - B: Clock skew — different nodes' clocks are not perfectly synchronized
+  - C: Fencing tokens — stale lock holders must be prevented from acting
+  - D: Load balancing — distributing lock requests evenly
+correct:
+  - A
+  - B
+  - C
+explanation: "Distributed locks face expiry (holder crashes), clock skew (leases rely on clocks), and stale holders (fencing tokens mitigate this). Load balancing is unrelated to the correctness of distributed locking."
+difficulty: 3
+
+### Q6
+type: scenario
+stem: "Step 1: A 3-node Raft cluster elects Node A as leader with term 3. Step 2: Node A gets isolated from Node B and Node C. Step 3: Node B and Node C elect Node B as leader with term 4. Step 4: The network partition heals and Node A sends an AppendEntries with term 3 to Node B. What happens?"
+options:
+  - A: Node B accepts the entries because Node A was the original leader
+  - B: Node B rejects the AppendEntries because term 3 is less than term 4, and Node A steps down to follower
+  - C: Node B forwards the entries to Node C for a majority vote
+  - D: Split-brain occurs — both leaders accept writes
+correct: B
+explanation: "In Raft, a node always respects the higher term. Node B sees term 3 < term 4 and rejects the request, returning its current term. Node A receives the higher term response and immediately steps down as follower. This is how Raft prevents split-brain after partition healing."
+trade_offs: "Node A's uncommitted entries from the isolated period may be overwritten. Raft guarantees safety (no two leaders commit in the same term) at the cost of availability during the partition. Some entries may need to be re-proposed by the new leader."
+difficulty: 3
+
+### Q7
+type: scenario
+stem: "Step 1: You are designing a system that needs distributed locking for 10,000 concurrent operations per second. Step 2: You consider using ZooKeeper for each lock acquisition. Step 3: Your benchmark shows ZooKeeper can handle only ~2,000 operations per second per ensemble. What should you do?"
+options:
+  - A: Use a larger ZooKeeper ensemble (7 nodes instead of 3)
+  - B: Use a distributed lock only for coordination of critical sections, and use finer-grained locking or lease-based approaches to reduce contention — consider Redis with Redlock for high-throughput locks
+  - C: Remove distributed locking entirely — it is always unnecessary
+  - D: Add more memory to the ZooKeeper nodes
+correct: B
+explanation: "Consensus systems like ZooKeeper are designed for coordination (leader election, config management), not high-throughput locking. For 10K TPS locks, use lease-based approaches, striped locks, or Redis-based locks. Reduce the scope and duration of distributed locks to minimize consensus overhead."
+trade_offs: "Redis with Redlock is faster but makes stronger assumptions (synchronized clocks, single Redis instances). ZooKeeper is slower but provides stronger guarantees. Choose based on whether you need correctness (ZooKeeper) or throughput (Redis). Stripe locks across multiple keys to reduce contention."
+difficulty: 4
+
+### Q8
+type: scenario
+stem: "Step 1: A client acquires a distributed lock with a 10-second lease from a coordination service. Step 2: The client begins a long-running operation (e.g., a database migration) that takes 30 seconds. Step 3: The lease expires while the operation is still running. Step 4: Another client acquires the same lock. What problem does this illustrate and how do you prevent it?"
+options:
+  - A: This is a deadlock — use a timeout to prevent it
+  - B: This illustrates the problem of non-atomic lock ownership — use a fencing token: the storage layer rejects writes with older fencing tokens
+  - C: This is a network partition — increase the lease duration
+  - D: This is normal behavior and does not cause problems
+correct: B
+explanation: "If a lock holder's lease expires while it's still working, two clients may believe they hold the lock simultaneously. Fencing tokens solve this: each lock acquisition gets a higher token, and the storage system rejects operations with tokens lower than the latest one seen. The first client's writes would be rejected even though it thinks it still holds the lock."
+trade_offs: "Increasing lease duration reduces the chance of expiry but increases the wait time if the holder crashes (no other client can acquire the lock until the lease expires). Fencing tokens decouple lock ownership from operation safety — the storage layer provides the real protection."
+difficulty: 3

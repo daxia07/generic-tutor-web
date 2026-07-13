@@ -256,3 +256,68 @@ items:
 correct_order: [0, 1, 2, 3]
 explanation: "SQL executes: FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT."
 difficulty: 2
+
+### Q4
+type: fill-in-blank
+stem: "A ______ function performs a calculation across a set of rows related to the current row without collapsing them into groups (unlike GROUP BY)."
+answers:
+  - "window"
+  - "window function"
+  - "analytic"
+  - "analytical"
+explanation: "Window functions (OVER clause) compute values across a window of related rows while preserving each individual row in the result, unlike GROUP BY which collapses rows."
+difficulty: 2
+
+### Q5
+type: select-all
+stem: "Which SQL clauses or keywords can be used with aggregate functions?"
+options:
+  - A: HAVING
+  - B: WHERE
+  - C: SELECT
+  - D: OVER (window function)
+correct:
+  - A
+  - C
+  - D
+explanation: "HAVING filters groups after aggregation (A). SELECT can display aggregate results (C). OVER applies aggregates across window frames (D). WHERE cannot use aggregate functions because it runs before grouping."
+difficulty: 2
+
+### Q6
+type: scenario
+stem: "Step 1: You need to find the top 3 highest-paid employees in each department. Step 2: You try GROUP BY department but that collapses each department into one row — you lose individual employee data. Step 3: Which SQL technique preserves individual rows while ranking within groups?"
+options:
+  - A: Self-join with aggregation
+  - B: ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC)
+  - C: GROUP BY department, employee_name
+  - D: SELECT DISTINCT with ORDER BY
+correct: B
+explanation: "ROW_NUMBER() with PARTITION BY assigns a rank within each department while keeping all rows. Filter with WHERE rn <= 3 in an outer query to get the top 3 per group."
+trade_offs: "Self-joins work but are verbose and slow. GROUP BY on department + name doesn't give rankings. Window functions are the idiomatic, efficient solution for top-N-per-group problems."
+difficulty: 3
+
+### Q7
+type: scenario
+stem: "Step 1: You write a query that joins three tables: orders → customers → countries. Step 2: Some customers have no orders, and you still want them in the result. Step 3: The query uses INNER JOIN throughout and these customers disappear. What join type should you use for the orders → customers join?"
+options:
+  - A: Keep INNER JOIN — missing customers are irrelevant
+  - B: Change to LEFT JOIN starting from customers — preserves all customers regardless of orders
+  - C: Change to RIGHT JOIN on orders — preserves all orders
+  - D: Use FULL OUTER JOIN on all three tables
+correct: B
+explanation: "LEFT JOIN from customers to orders preserves all customer rows, showing NULL for order data when a customer has no orders. This is the standard pattern for 'find all X even if they have no Y'."
+trade_offs: "LEFT JOIN produces NULLs for missing order data which your application must handle. FULL OUTER JOIN is overkill here (includes orders with no customer — likely invalid data). Starting the join chain from the table you want to preserve is the key insight."
+difficulty: 3
+
+### Q8
+type: scenario
+stem: "Step 1: Your query needs a running total of daily revenue. Step 2: You try: SELECT date, SUM(revenue) FROM sales GROUP BY date. Step 3: This gives daily totals, not a running cumulative sum. Step 4: Which SQL feature produces a cumulative total that grows each day?"
+options:
+  - A: Nested subquery with WHERE date <= outer.date
+  - B: SUM(revenue) OVER (ORDER BY date ROWS UNBOUNDED PRECEDING)
+  - C: Self-join with aggregation on all prior dates
+  - D: GROUP BY date with ROLLUP
+correct: B
+explanation: "SUM() OVER (ORDER BY date ROWS UNBOUNDED PRECEDING) computes a running cumulative total. Each row's result includes the sum of all rows from the start up to the current row."
+trade_offs: "A correlated subquery or self-join produces the same result but is O(n²). Window functions compute running aggregates in O(n). ROLLUP adds subtotal rows but doesn't produce cumulative sums."
+difficulty: 3

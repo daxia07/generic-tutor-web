@@ -61,3 +61,66 @@ correct:
   - C
 explanation: "Load balancing, sharding, and caching all distribute load across multiple servers. Adding RAM is vertical scaling."
 difficulty: 2
+
+### Q4
+type: fill-in-blank
+stem: "The component that limits the overall throughput of a system is called a ______."
+answers:
+  - "bottleneck"
+  - "bottlenecks"
+explanation: "A bottleneck is the single component that restricts the entire system's performance. Identifying and removing bottlenecks is key to scaling."
+difficulty: 2
+
+### Q5
+type: select-all
+stem: "Which of the following are challenges introduced by horizontal scaling?"
+options:
+  - A: Distributed session management
+  - B: Data consistency across nodes
+  - C: Increased hardware cost per server
+  - D: Service discovery and routing
+correct:
+  - A
+  - B
+  - D
+explanation: "Horizontal scaling adds complexity: sessions must be externalized (A), data must be kept consistent across replicas (B), and nodes must find each other (D). Higher per-server cost is a vertical scaling issue, not horizontal."
+difficulty: 2
+
+### Q6
+type: scenario
+stem: "Step 1: Your e-commerce site handles 1,000 RPS with a single database server that is CPU-saturated. Step 2: You add read replicas to offload read traffic (80% of queries). Step 3: Writes now become the bottleneck since all writes still go to the primary. What scaling strategy should you consider next?"
+options:
+  - A: Add more RAM to the primary (vertical scaling)
+  - B: Shard the database to distribute writes across multiple primaries
+  - C: Add more read replicas
+  - D: Switch to a NoSQL database
+correct: B
+explanation: "Read replicas solve read bottlenecks but all writes still hit one primary. Sharding distributes writes across multiple database instances, solving the write bottleneck."
+trade_offs: "Sharding adds significant operational complexity (cross-shard queries, resharding). Vertical scaling of the primary is simpler but has a hard ceiling. More read replicas don't help writes."
+difficulty: 3
+
+### Q7
+type: scenario
+stem: "Step 1: You manage a batch processing system that runs nightly ETL jobs. Step 2: Data volume doubles every 6 months and jobs now exceed the nightly window. Step 3: You must reduce processing time without changing the job logic. Which approach is most appropriate?"
+options:
+  - A: Vertical scaling — upgrade the ETL server with more CPU cores
+  - B: Horizontal scaling — partition data and run jobs in parallel on multiple workers
+  - C: Caching — cache intermediate results between runs
+  - D: Switch to streaming — process data in real-time instead of batch
+correct: B
+explanation: "Partitioning data and processing in parallel across workers is horizontal scaling for batch workloads. It directly reduces wall-clock time proportional to worker count."
+trade_offs: "Parallel execution requires data to be partitionable and introduces coordination overhead. Vertical scaling has diminishing returns. Streaming is a fundamental architecture change, not a scaling adjustment."
+difficulty: 3
+
+### Q8
+type: scenario
+stem: "Step 1: A startup launches with a single server running both the web app and database. Step 2: Traffic grows 10x in one month — the server is overloaded. Step 3: The team must decide: upgrade the server (vertical) or add servers (horizontal). What factors should drive this decision?"
+options:
+  - A: Only current cost — always pick the cheaper option
+  - B: Statelessness of the application, expected future growth, and operational maturity
+  - C: Only latency requirements — if p99 < 200ms, stay vertical
+  - D: Always go horizontal — vertical is never the right choice at scale
+correct: B
+explanation: "The decision depends on whether the app is stateless (horizontal is easier), how much more growth is expected (horizontal scales further), and whether the team can handle the operational complexity of distributed systems."
+trade_offs: "Vertical scaling is simpler and faster to implement but has a ceiling. Horizontal scaling offers near-limitless growth but requires load balancers, externalized state, and monitoring. Early-stage startups may benefit from vertical first, then migrate."
+difficulty: 4
