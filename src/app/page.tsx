@@ -12,12 +12,23 @@ import {
   Target,
   CheckCircle2,
   Clock,
+  Lock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 export const dynamic = "force-dynamic";
+
+function parseJsonArray(val: string | null | undefined): string[] {
+  if (!val) return [];
+  try {
+    const parsed = JSON.parse(val);
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
 
 export default async function DashboardPage() {
   // Fetch from Turso
@@ -52,10 +63,16 @@ export default async function DashboardPage() {
   // Also load content for concept titles that may not be in DB yet
   const contentConcepts = loadAllConcepts();
 
-  // Compute stats
-  const mastered = allConcepts.filter(
-    (c) => c.status === "mastered"
-  ).length;
+  const masteredSet = new Set(
+    allConcepts.filter((c) => c.status === "mastered").map((c) => c.id)
+  );
+  const startedSet = new Set(
+    allConcepts
+      .filter((c) => c.status !== "unseen")
+      .map((c) => c.id)
+  );
+
+  const mastered = masteredSet.size;
   const totalConcepts = Math.max(allConcepts.length, contentConcepts.length);
   const overallProgress =
     totalConcepts > 0 ? Math.round((mastered / totalConcepts) * 100) : 0;
@@ -73,7 +90,16 @@ export default async function DashboardPage() {
   );
 
   // Build a lookup for concept titles from DB, fallback to content
-  const conceptTitleMap = new Map<string, { title: string; difficulty: number; status: string; ef: number; interval: number; repetitions: number }>();
+  const conceptTitleMap = new Map<string, {
+    title: string;
+    difficulty: number;
+    status: string;
+    ef: number;
+    interval: number;
+    repetitions: number;
+    nextReview: string | null;
+    prerequisites: string[];
+  }>();
   for (const c of allConcepts) {
     conceptTitleMap.set(c.id, {
       title: c.title,
@@ -82,9 +108,10 @@ export default async function DashboardPage() {
       ef: c.ef,
       interval: c.interval,
       repetitions: c.repetitions,
+      nextReview: c.nextReview,
+      prerequisites: parseJsonArray(c.prerequisites),
     });
   }
-  // Add content concepts not yet in DB
   for (const c of contentConcepts) {
     if (!conceptTitleMap.has(c.id)) {
       conceptTitleMap.set(c.id, {
@@ -94,8 +121,20 @@ export default async function DashboardPage() {
         ef: 2.5,
         interval: 0,
         repetitions: 0,
+        nextReview: null,
+        prerequisites: c.prerequisites,
       });
     }
+  }
+
+  function prereqsReady(prereqs: string[]): boolean {
+    if (prereqs.length === 0) return true;
+    return prereqs.every((p) => masteredSet.has(p) || startedSet.has(p));
+  }
+
+  function prereqsMastered(prereqs: string[]): boolean {
+    if (prereqs.length === 0) return true;
+    return prereqs.every((p) => masteredSet.has(p));
   }
 
   return (
@@ -173,29 +212,40 @@ export default async function DashboardPage() {
               <div className="space-y-2">
                 {dueConcepts.slice(0, 5).map((concept) => {
                   const isNew = concept.status === "unseen";
+                  const prereqs = parseJsonArray(concept.prerequisites);
+                  const locked = isNew && !prereqsMastered(prereqs);
                   return (
                     <div
                       key={concept.id}
                       className="flex items-center justify-between py-1.5"
                     >
-                      <div>
-                        <p className="font-medium text-sm">{concept.title}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-medium text-sm ${locked ? "text-[#afafaf]" : ""}`}>
+                          {locked && <Lock className="w-3 h-3 inline mr-1" />}
+                          {concept.title}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {isNew
-                            ? "New"
+                            ? locked
+                              ? `Requires: ${prereqs.filter(p => !masteredSet.has(p)).map(p => conceptTitleMap.get(p)?.title ?? p).join(", ")}`
+                              : "New"
                             : `${concept.repetitions} reps · ${concept.interval}d interval`}
                         </p>
                       </div>
-                      <Badge
-                        variant={isNew ? "default" : "secondary"}
-                        className={
-                          isNew
-                            ? "bg-[#1cb0f6]"
-                            : "bg-[#ff9600]/10 text-[#ff9600]"
-                        }
-                      >
-                        {isNew ? "Learn" : "Review"}
-                      </Badge>
+                      {!locked && (
+                        <Link href={`/session?conceptId=${encodeURIComponent(concept.id)}&mode=learn`}>
+                          <Badge
+                            variant={isNew ? "default" : "secondary"}
+                            className={
+                              isNew
+                                ? "bg-[#1cb0f6] cursor-pointer"
+                                : "bg-[#ff9600]/10 text-[#ff9600] cursor-pointer"
+                            }
+                          >
+                            {isNew ? "Learn" : "Review"}
+                          </Badge>
+                        </Link>
+                      )}
                     </div>
                   );
                 })}
@@ -206,9 +256,9 @@ export default async function DashboardPage() {
                 )}
               </div>
             )}
-            <Link href="/session/new">
+            <Link href="/session?mode=learn">
               <button className="w-full mt-3 flex items-center justify-center gap-2 rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]">
-                Start Session ({dueConcepts.length})
+                Quick Session
                 <ArrowRight className="w-4 h-4" />
               </button>
             </Link>
@@ -238,20 +288,39 @@ export default async function DashboardPage() {
                   ready to learn
                 </p>
                 <div className="space-y-1.5 mb-3">
-                  {newDue.slice(0, 5).map((concept) => (
-                    <div key={concept.id} className="flex items-center gap-2 text-sm py-1">
-                      <BookOpen className="w-3.5 h-3.5 text-[#1cb0f6]" />
-                      <span>{concept.title}</span>
-                      <Badge variant="outline" className="ml-auto text-xs">
-                        Lvl {concept.difficulty}
-                      </Badge>
-                    </div>
-                  ))}
+                  {newDue.slice(0, 5).map((concept) => {
+                    const prereqs = parseJsonArray(concept.prerequisites);
+                    const ready = prereqsMastered(prereqs);
+                    return (
+                      <div key={concept.id} className="flex items-center gap-2 text-sm py-1">
+                        {ready ? (
+                          <Link
+                            href={`/session?conceptId=${encodeURIComponent(concept.id)}&mode=learn`}
+                            className="flex items-center gap-2 flex-1 hover:text-[#1cb0f6] transition-colors"
+                          >
+                            <BookOpen className="w-3.5 h-3.5 text-[#1cb0f6]" />
+                            <span>{concept.title}</span>
+                            <Badge variant="outline" className="ml-auto text-xs">
+                              Lvl {concept.difficulty}
+                            </Badge>
+                          </Link>
+                        ) : (
+                          <div className="flex items-center gap-2 flex-1 text-[#afafaf]">
+                            <Lock className="w-3.5 h-3.5" />
+                            <span>{concept.title}</span>
+                            <Badge variant="outline" className="ml-auto text-xs border-[#e5e5e5] text-[#afafaf]">
+                              Lvl {concept.difficulty}
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </>
             )}
             {newDue.length > 0 && (
-              <Link href="/session/new">
+              <Link href="/session?mode=learn">
                 <button className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#1cb0f6] hover:bg-[#1899d6] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#1899d6] active:shadow-none active:translate-y-[2px]">
                   Start Learning
                   <ArrowRight className="w-4 h-4" />
@@ -275,17 +344,23 @@ export default async function DashboardPage() {
               const ef = dbConcept?.ef ?? 2.5;
               const interval = dbConcept?.interval ?? 0;
               const reps = dbConcept?.repetitions ?? 0;
+              const nextReview = dbConcept?.nextReview ?? null;
               const isMastered = status === "mastered";
               const isLearning = status === "learning" || status === "reviewing";
               const isDue =
-                (status === "learning" || status === "reviewing") &&
-                dbConcept != null;
+                isLearning && (nextReview === null || nextReview <= today);
+
+              const prereqs = dbConcept?.prerequisites ?? [];
+              const locked = status === "unseen" && !prereqsReady(prereqs);
 
               return (
                 <Link
                   key={concept.id}
-                  href={`/learn/${concept.id}`}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#f0f0f0] transition-colors group"
+                  href={locked ? "#" : `/session?conceptId=${encodeURIComponent(concept.id)}&mode=learn`}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors group ${
+                    locked ? "opacity-50 cursor-not-allowed" : "hover:bg-[#f0f0f0]"
+                  }`}
+                  onClick={locked ? (e) => e.preventDefault() : undefined}
                 >
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
@@ -293,6 +368,8 @@ export default async function DashboardPage() {
                         ? "bg-[#ffc800]"
                         : isLearning
                         ? "bg-[#1cb0f6]"
+                        : locked
+                        ? "bg-[#e5e5e5]"
                         : "bg-[#e5e5e5]"
                     }`}
                   >
@@ -300,6 +377,8 @@ export default async function DashboardPage() {
                       <CheckCircle2 className="w-4 h-4 text-white" />
                     ) : isLearning ? (
                       <Zap className="w-3.5 h-3.5 text-white" />
+                    ) : locked ? (
+                      <Lock className="w-3.5 h-3.5 text-[#afafaf]" />
                     ) : (
                       <BookOpen className="w-3.5 h-3.5 text-[#afafaf]" />
                     )}

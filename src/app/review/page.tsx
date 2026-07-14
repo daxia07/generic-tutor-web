@@ -104,7 +104,7 @@ export default async function ReviewPage() {
               No concepts are due for review. Your spaced repetition is on
               track.
             </p>
-            <Link href="/session/new">
+            <Link href="/session?mode=learn">
               <Button className="bg-[#1cb0f6] hover:bg-[#1899d6] text-white font-bold">
                 Learn Something New
               </Button>
@@ -153,7 +153,7 @@ export default async function ReviewPage() {
           </Card>
 
           {/* Start review session button */}
-          <Link href="/session/new" className="block">
+          <Link href="/session?mode=review" className="block">
             <button className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-4 px-4 text-base transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]">
               Start Review Session
               <ArrowRight className="w-5 h-5" />

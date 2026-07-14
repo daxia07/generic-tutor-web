@@ -1,5 +1,5 @@
 const CACHE_NAME = "tutor-v1";
-const SHELL_URLS = ["/", "/login", "/session/new"];
+const SHELL_URLS = ["/", "/login", "/session"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

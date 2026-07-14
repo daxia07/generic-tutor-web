@@ -123,6 +123,8 @@ export interface SessionMetadata {
   estimatedMinutes: number;
   reviewQuestionCount: number;
   questions: Question[];
+  nextConceptId: string | null;
+  nextConceptTitle: string | null;
 }
 
 export interface AnswerRecord {
@@ -141,10 +143,12 @@ export interface SessionResult {
   accuracy: number;
   correctCount: number;
   totalQuestions: number;
-  conceptsUpdated: { conceptId: string; newStatus: string }[];
+  conceptsUpdated: { conceptId: string; newStatus: string; title: string }[];
   streakUpdated: boolean;
   totalXp: number;
   mistakes: { questionId: string; stem: string; userAnswer: string; correctAnswer: string }[];
+  nextConceptId: string | null;
+  nextConceptTitle: string | null;
 }
 
 // ---------------------------------------------------------------------------

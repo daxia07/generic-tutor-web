@@ -357,7 +357,7 @@ export default function LearnConceptPage({ params }: PageProps) {
                 Back to Learn
               </Button>
               <Button
-                onClick={() => router.push("/session/new")}
+                onClick={() => router.push(`/session?conceptId=${encodeURIComponent(conceptId)}&mode=learn`)}
                 className="bg-[#58cc02] hover:bg-[#46a302] text-white font-bold"
               >
                 Start Session

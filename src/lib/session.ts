@@ -1,43 +1,90 @@
-// ---------------------------------------------------------------------------
-// Session builder — assembles questions into a guided lesson session
-// ---------------------------------------------------------------------------
-
 import { db } from "./db/index";
 import { concepts, questions, sessions, topics, streaks, stats, answers } from "./db/schema";
-import { eq, and, lte, sql, isNull, desc } from "drizzle-orm";
+import { eq, and, lte, sql, isNull, desc, inArray } from "drizzle-orm";
 import type { SessionMetadata, Question, AnswerRecord, SessionResult } from "./types";
 import { gradeFromCorrectness, computeNextSm2 } from "./sm2";
 
 const TOPIC_ID = "system-design";
 
-/**
- * Build a new learning session.
- * Selects 6-8 new questions + 2-3 review questions, shuffles, returns metadata.
- */
+function parseJsonArray(val: string | null | undefined): string[] {
+  if (!val) return [];
+  try {
+    const parsed = JSON.parse(val);
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function getMasteredConceptIds(): Promise<Set<string>> {
+  const rows = await db
+    .select({ id: concepts.id })
+    .from(concepts)
+    .where(and(eq(concepts.topicId, TOPIC_ID), eq(concepts.status, "mastered")));
+  return new Set(rows.map((r) => r.id));
+}
+
+function prerequisitesMet(prereqs: string[], mastered: Set<string>): boolean {
+  if (prereqs.length === 0) return true;
+  return prereqs.every((p) => mastered.has(p));
+}
+
 export async function buildSession(
-  mode: "learn" | "review" = "learn"
+  mode: "learn" | "review" = "learn",
+  conceptId?: string
 ): Promise<SessionMetadata> {
   const sessionId = crypto.randomUUID();
 
-  // Get topic info
   const topic = await db.select().from(topics).where(eq(topics.id, TOPIC_ID)).limit(1);
   const topicName = topic[0]?.name ?? "System Design";
 
-  // Get unseen/learning concepts for new questions
-  const newConcepts = await db
-    .select()
-    .from(concepts)
-    .where(
-      and(
-        eq(concepts.topicId, TOPIC_ID),
-        sql`${concepts.status} IN ('unseen', 'learning')`
-      )
-    )
-    .orderBy(concepts.difficulty, concepts.ef)
-    .limit(5);
+  let newConceptIds: string[] = [];
+  let newConceptTitles: string[] = [];
 
-  // Get questions from new concepts
-  const newConceptIds = newConcepts.map((c) => c.id);
+  if (conceptId) {
+    const target = await db
+      .select()
+      .from(concepts)
+      .where(and(eq(concepts.topicId, TOPIC_ID), eq(concepts.id, conceptId)))
+      .limit(1);
+
+    if (target.length > 0) {
+      newConceptIds = [target[0].id];
+      newConceptTitles = [target[0].title];
+    } else {
+      const contentConcepts = await db
+        .select()
+        .from(concepts)
+        .where(and(eq(concepts.topicId, TOPIC_ID), eq(concepts.id, conceptId)))
+        .limit(1);
+      if (contentConcepts.length > 0) {
+        newConceptIds = [conceptId];
+        newConceptTitles = [contentConcepts[0].title];
+      }
+    }
+  } else if (mode === "learn") {
+    const mastered = await getMasteredConceptIds();
+
+    const allCandidates = await db
+      .select()
+      .from(concepts)
+      .where(
+        and(
+          eq(concepts.topicId, TOPIC_ID),
+          sql`${concepts.status} IN ('unseen', 'learning')`
+        )
+      )
+      .orderBy(concepts.difficulty, concepts.ef);
+
+    const eligible = allCandidates.filter((c) => {
+      const prereqs = parseJsonArray(c.prerequisites);
+      return prerequisitesMet(prereqs, mastered);
+    });
+
+    newConceptIds = eligible.slice(0, 5).map((c) => c.id);
+    newConceptTitles = eligible.slice(0, 5).map((c) => c.title);
+  }
+
   let newQuestions: Question[] = [];
   if (newConceptIds.length > 0) {
     const newQs = await db
@@ -50,43 +97,44 @@ export async function buildSession(
     newQuestions = newQs.map((q) => deserializeQuestion(q, false));
   }
 
-  // Get due concepts for review questions
   const today = new Date().toISOString().split("T")[0];
-  const dueConcepts = await db
-    .select()
-    .from(concepts)
-    .where(
-      and(
-        eq(concepts.topicId, TOPIC_ID),
-        sql`${concepts.status} IN ('learning', 'reviewing')`,
-        sql`(${concepts.nextReview} IS NULL OR ${concepts.nextReview} <= ${today})`
-      )
-    )
-    .orderBy(concepts.ef)
-    .limit(3);
-
-  // Get review questions from due concepts
-  const dueConceptIds = dueConcepts
-    .map((c) => c.id)
-    .filter((id) => !newConceptIds.includes(id)); // Don't double-dip
   let reviewQuestions: Question[] = [];
-  if (dueConceptIds.length > 0) {
-    const reviewQs = await db
-      .select()
-      .from(questions)
-      .where(
-        sql`${questions.conceptId} IN (${sql.join(dueConceptIds.map((id) => sql`${id}`), sql`, `)})`
-      );
+  let dueConceptIds: string[] = [];
 
-    reviewQuestions = reviewQs.map((q) => deserializeQuestion(q, true));
+  if (!conceptId) {
+    const dueConcepts = await db
+      .select()
+      .from(concepts)
+      .where(
+        and(
+          eq(concepts.topicId, TOPIC_ID),
+          sql`${concepts.status} IN ('learning', 'reviewing')`,
+          sql`(${concepts.nextReview} IS NULL OR ${concepts.nextReview} <= ${today})`
+        )
+      )
+      .orderBy(concepts.ef)
+      .limit(3);
+
+    dueConceptIds = dueConcepts
+      .map((c) => c.id)
+      .filter((id) => !newConceptIds.includes(id));
+
+    if (dueConceptIds.length > 0) {
+      const reviewQs = await db
+        .select()
+        .from(questions)
+        .where(
+          sql`${questions.conceptId} IN (${sql.join(dueConceptIds.map((id) => sql`${id}`), sql`, `)})`
+        );
+
+      reviewQuestions = reviewQs.map((q) => deserializeQuestion(q, true));
+    }
   }
 
-  // Select and shuffle questions
   const selectedNew = shuffleArray(newQuestions).slice(0, 8);
   const selectedReview = shuffleArray(reviewQuestions).slice(0, 3);
   const allQuestions = shuffleArray([...selectedNew, ...selectedReview]);
 
-  // If no questions available, return empty session info
   if (allQuestions.length === 0) {
     return {
       sessionId,
@@ -97,16 +145,13 @@ export async function buildSession(
       estimatedMinutes: 0,
       reviewQuestionCount: 0,
       questions: [],
+      nextConceptId: null,
+      nextConceptTitle: null,
     };
   }
 
-  // Build learning points from new concept summaries
-  const learningPoints = newConcepts
-    .slice(0, 3)
-    .map((c) => c.title)
-    .filter(Boolean);
+  const learningPoints = newConceptTitles.slice(0, 3).filter(Boolean);
 
-  // Create session record in DB
   await db.insert(sessions).values({
     id: sessionId,
     topicId: TOPIC_ID,
@@ -119,31 +164,65 @@ export async function buildSession(
     ),
   });
 
-  // Build title
-  const title = mode === "review"
-    ? `${topicName} — Review Session`
-    : newConcepts.length > 0
-    ? `${newConcepts[0].title}${newConcepts.length > 1 ? ` & ${newConcepts.length - 1} more` : ""}`
-    : `${topicName} — Review`;
+  const title =
+    conceptId && newConceptTitles.length === 1
+      ? newConceptTitles[0]
+      : mode === "review"
+        ? `${topicName} — Review Session`
+        : newConceptTitles.length > 0
+          ? `${newConceptTitles[0]}${newConceptTitles.length > 1 ? ` & ${newConceptTitles.length - 1} more` : ""}`
+          : `${topicName} — Review`;
+
+  const nextConcept = await getNextAvailableConcept(newConceptIds);
 
   return {
     sessionId,
     title,
     summary:
-      mode === "review"
-        ? "Review concepts that are due for spaced repetition."
-        : `Learn about ${learningPoints.join(", ")}`,
+      conceptId
+        ? `Master ${learningPoints.join(", ")}`
+        : mode === "review"
+          ? "Review concepts that are due for spaced repetition."
+          : `Learn about ${learningPoints.join(", ")}`,
     learningPoints,
     questionCount: allQuestions.length,
     estimatedMinutes: Math.ceil(allQuestions.length * 0.6),
     reviewQuestionCount: selectedReview.length,
     questions: allQuestions,
+    nextConceptId: nextConcept?.id ?? null,
+    nextConceptTitle: nextConcept?.title ?? null,
   };
 }
 
-/**
- * Process session results — update SM-2, XP, streaks.
- */
+async function getNextAvailableConcept(
+  justStudiedIds: string[]
+): Promise<{ id: string; title: string } | null> {
+  const mastered = await getMasteredConceptIds();
+
+  for (const id of justStudiedIds) {
+    mastered.add(id);
+  }
+
+  const candidates = await db
+    .select({ id: concepts.id, title: concepts.title, prerequisites: concepts.prerequisites, difficulty: concepts.difficulty })
+    .from(concepts)
+    .where(
+      and(
+        eq(concepts.topicId, TOPIC_ID),
+        sql`${concepts.status} IN ('unseen', 'learning')`
+      )
+    )
+    .orderBy(concepts.difficulty, concepts.ef);
+
+  const next = candidates.find((c) => {
+    if (justStudiedIds.includes(c.id)) return false;
+    const prereqs = parseJsonArray(c.prerequisites);
+    return prerequisitesMet(prereqs, mastered);
+  });
+
+  return next ? { id: next.id, title: next.title } : null;
+}
+
 export async function processSessionResult(
   sessionId: string,
   answerRecords: AnswerRecord[]
@@ -152,18 +231,15 @@ export async function processSessionResult(
   const totalQuestions = answerRecords.length;
   const accuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
-  // XP: 10 per correct, 3 per incorrect
   const xpEarned = answerRecords.reduce(
     (sum, a) => sum + (a.correct ? 10 : 3),
     0
   );
 
-  // Update each concept's SM-2 state
-  const conceptsUpdated: { conceptId: string; newStatus: string }[] = [];
+  const conceptsUpdated: { conceptId: string; newStatus: string; title: string }[] = [];
   const conceptIds = [...new Set(answerRecords.map((a) => a.conceptId))];
 
   for (const conceptId of conceptIds) {
-    // Get the worst grade for this concept from this session
     const conceptAnswers = answerRecords.filter((a) => a.conceptId === conceptId);
     const worstGrade = Math.min(...conceptAnswers.map((a) => a.sm2Grade));
 
@@ -195,10 +271,9 @@ export async function processSessionResult(
       })
       .where(eq(concepts.id, conceptId));
 
-    conceptsUpdated.push({ conceptId, newStatus: nextSm2.status });
+    conceptsUpdated.push({ conceptId, newStatus: nextSm2.status, title: concept.title });
   }
 
-  // Insert answer records
   for (const answer of answerRecords) {
     await db.insert(answers).values({
       sessionId,
@@ -213,7 +288,6 @@ export async function processSessionResult(
     });
   }
 
-  // Update session record
   await db
     .update(sessions)
     .set({
@@ -226,7 +300,6 @@ export async function processSessionResult(
     })
     .where(eq(sessions.id, sessionId));
 
-  // Update streak
   const today = new Date().toISOString().split("T")[0];
   const yesterday = new Date(Date.now() - 86_400_000).toISOString().split("T")[0];
   const streakRows = await db.select().from(streaks).limit(1);
@@ -262,7 +335,6 @@ export async function processSessionResult(
       .where(eq(streaks.id, 1));
   }
 
-  // Update stats
   const statsRows = await db.select().from(stats).limit(1);
   const currentStats = statsRows[0];
   const newMastered = conceptsUpdated.filter((c) => c.newStatus === "mastered").length;
@@ -277,18 +349,18 @@ export async function processSessionResult(
       .where(eq(stats.id, 1));
   }
 
-  // Build mistakes list
   const mistakes = answerRecords
     .filter((a) => !a.correct)
     .map((a) => ({
       questionId: a.questionId,
-      stem: "", // Will be filled by caller from question data
+      stem: "",
       userAnswer: a.userAnswer,
       correctAnswer: a.correctAnswer,
     }));
 
-  // Get updated total XP
   const updatedStats = await db.select().from(stats).limit(1);
+
+  const nextConcept = await getNextAvailableConcept(conceptIds);
 
   return {
     sessionId,
@@ -300,12 +372,10 @@ export async function processSessionResult(
     streakUpdated,
     totalXp: updatedStats[0]?.totalXp ?? xpEarned,
     mistakes,
+    nextConceptId: nextConcept?.id ?? null,
+    nextConceptTitle: nextConcept?.title ?? null,
   };
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function deserializeQuestion(
   row: any,

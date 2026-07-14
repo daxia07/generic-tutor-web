@@ -9,9 +9,10 @@ interface SessionCompleteProps {
   result: SessionResult;
   onContinue: () => void;
   nextSessionTitle?: string;
+  onStartNext?: () => void;
 }
 
-export function SessionComplete({ result, onContinue, nextSessionTitle }: SessionCompleteProps) {
+export function SessionComplete({ result, onContinue, nextSessionTitle, onStartNext }: SessionCompleteProps) {
   const confettiRef = useRef(false);
 
   useEffect(() => {
@@ -116,7 +117,7 @@ export function SessionComplete({ result, onContinue, nextSessionTitle }: Sessio
               ) : (
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#58cc02]" />
               )}
-              <span className="capitalize">{c.conceptId.replace(/-/g, " ")}</span>
+              <span>{c.title}</span>
               <span className="text-xs text-muted-foreground ml-auto capitalize">
                 {c.newStatus}
               </span>
@@ -139,19 +140,47 @@ export function SessionComplete({ result, onContinue, nextSessionTitle }: Sessio
         </div>
       )}
 
-      <div className="pt-2">
-        {nextSessionTitle && (
-          <p className="text-xs text-muted-foreground mb-3">
-            Next up: {nextSessionTitle}
-          </p>
+      <div className="pt-2 space-y-3">
+        {nextSessionTitle && onStartNext && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-[#f0f9ff] border border-[#1cb0f6]/20 rounded-xl p-3 text-left"
+          >
+            <p className="text-xs font-medium text-[#1cb0f6] uppercase tracking-wide mb-1">
+              Next up
+            </p>
+            <p className="text-sm font-medium text-[#4b4b4b]">
+              {nextSessionTitle}
+            </p>
+          </motion.div>
         )}
-        <button
-          onClick={onContinue}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-3 px-8 text-base transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]"
-        >
-          Continue Learning
-          <ArrowRight className="w-5 h-5" />
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={onContinue}
+            className="flex-1 rounded-xl border-2 border-[#e5e5e5] hover:bg-[#f7f7f7] text-[#4b4b4b] font-bold py-3 px-4 text-sm transition-colors"
+          >
+            Dashboard
+          </button>
+          {nextSessionTitle && onStartNext ? (
+            <button
+              onClick={onStartNext}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]"
+            >
+              Continue
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={onContinue}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]"
+            >
+              Continue Learning
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

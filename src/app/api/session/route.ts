@@ -5,9 +5,10 @@ import type { AnswerRecord } from "@/lib/types";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const mode = (searchParams.get("mode") as "learn" | "review") || "learn";
+  const conceptId = searchParams.get("conceptId") || undefined;
 
   try {
-    const session = await buildSession(mode);
+    const session = await buildSession(mode, conceptId);
     return NextResponse.json(session);
   } catch (error) {
     console.error("Failed to build session:", error);
