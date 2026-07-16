@@ -2,7 +2,8 @@ import fs from "fs";
 import path from "path";
 import OpenAI from "openai";
 
-const CONTENT_DIR = path.join(process.cwd(), "content", "system-design");
+import { getContentDir } from "../src/lib/paths";
+const CONTENT_DIR = getContentDir("system-design");
 const client = new OpenAI({
   baseURL: "https://api.deepseek.com",
   apiKey: process.env.DEEPSEEK_API_KEY,

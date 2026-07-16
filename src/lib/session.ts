@@ -94,7 +94,9 @@ export async function buildSession(
         sql`${questions.conceptId} IN (${sql.join(newConceptIds.map((id) => sql`${id}`), sql`, `)})`
       );
 
-    newQuestions = newQs.map((q) => deserializeQuestion(q, false));
+    newQuestions = newQs
+      .map((q) => deserializeQuestion(q, false))
+      .filter(isOptionQuestion);
   }
 
   const today = new Date().toISOString().split("T")[0];
@@ -127,7 +129,9 @@ export async function buildSession(
           sql`${questions.conceptId} IN (${sql.join(dueConceptIds.map((id) => sql`${id}`), sql`, `)})`
         );
 
-      reviewQuestions = reviewQs.map((q) => deserializeQuestion(q, true));
+      reviewQuestions = reviewQs
+        .map((q) => deserializeQuestion(q, true))
+        .filter(isOptionQuestion);
     }
   }
 
@@ -377,10 +381,20 @@ export async function processSessionResult(
   };
 }
 
+/** Product path: option-based judgment only (MC + scenario). */
+function isOptionQuestion(q: Question | null): q is Question {
+  if (!q) return false;
+  return q.type === "multiple-choice" || q.type === "scenario";
+}
+
 function deserializeQuestion(
   row: any,
   isReview: boolean
-): Question {
+): Question | null {
+  // Skip non-option types at deserialize time so they never reach the lesson UI
+  if (row.type === "fill-in-blank" || row.type === "select-all" || row.type === "order") {
+    return null;
+  }
   const type = row.type as Question["type"];
   const options = JSON.parse(row.options || "[]");
   const correctAnswer = JSON.parse(row.correctAnswer || "[]");

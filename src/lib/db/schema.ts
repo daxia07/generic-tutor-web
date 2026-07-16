@@ -157,3 +157,50 @@ export const stats = sqliteTable("stats", {
   totalXp: integer("total_xp").notNull().default(0),
   conceptsMastered: integer("concepts_mastered").notNull().default(0),
 });
+
+// ---------------------------------------------------------------------------
+// Digests — notes + user feedback queued for overnight processing
+// ---------------------------------------------------------------------------
+
+export const digests = sqliteTable(
+  "digests",
+  {
+    id: text("id").primaryKey(),
+    notes: text("notes").notNull(),
+    feedback: text("feedback"),
+    sourceType: text("source_type").notNull().default("notes"), // article | notes | transcript | debrief
+    signals: text("signals").notNull().default("[]"), // JSON string[]
+    status: text("status").notNull().default("inbox"), // inbox | queued | processing | done | failed
+    result: text("result"), // JSON: { conceptIds, questionIds, summary, ... }
+    error: text("error"),
+    createdAt: text("created_at").notNull(),
+    processedAt: text("processed_at"),
+  },
+  (table) => ({
+    statusIdx: index("idx_digests_status").on(table.status),
+  })
+);
+
+// ---------------------------------------------------------------------------
+// Overnight runs — pipeline execution records
+// ---------------------------------------------------------------------------
+
+export const overnightRuns = sqliteTable("overnight_runs", {
+  id: text("id").primaryKey(),
+  startedAt: text("started_at").notNull(),
+  finishedAt: text("finished_at"),
+  status: text("status").notNull().default("running"), // running | success | failed
+  summary: text("summary").notNull().default("{}"), // JSON
+  logPath: text("log_path"),
+});
+
+// ---------------------------------------------------------------------------
+// Daily plans — path plan for a calendar day (overnight output)
+// ---------------------------------------------------------------------------
+
+export const dailyPlans = sqliteTable("daily_plans", {
+  id: text("id").primaryKey(), // YYYY-MM-DD
+  planJson: text("plan_json").notNull().default("{}"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});

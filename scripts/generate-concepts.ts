@@ -2,7 +2,8 @@ import fs from "fs";
 import path from "path";
 import OpenAI from "openai";
 
-const CONTENT_DIR = path.join(process.cwd(), "content", "system-design");
+import { getContentDir } from "../src/lib/paths";
+const CONTENT_DIR = getContentDir("system-design");
 
 function getClient(): OpenAI {
   return new OpenAI({

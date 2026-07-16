@@ -11,7 +11,11 @@
     "refresh:fetch": "npx tsx scripts/fetch-progress.ts",
     "refresh:llm": "npx tsx scripts/llm-refresh-content.ts",
     "refresh": "npx tsx scripts/fetch-progress.ts > /tmp/progress.json 2>/dev/null && npx tsx scripts/llm-refresh-content.ts /tmp/progress.json",
-    "refresh:dry": "npx tsx scripts/fetch-progress.ts > /tmp/progress.json 2>/dev/null && npx tsx scripts/llm-refresh-content.ts /tmp/progress.json --dry-run"
+    "refresh:dry": "npx tsx scripts/fetch-progress.ts > /tmp/progress.json 2>/dev/null && npx tsx scripts/llm-refresh-content.ts /tmp/progress.json --dry-run",
+    "migrate:schema": "npx tsx scripts/migrate-schema.ts",
+    "overnight": "npx tsx scripts/overnight-pipeline.ts",
+    "overnight:dry": "npx tsx scripts/overnight-pipeline.ts --dry-run",
+    "overnight:install-cron": "bash scripts/install-overnight-cron.sh"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

@@ -1,453 +1,255 @@
 import { db } from "@/lib/db/index";
-import { concepts, streaks, stats, sessions } from "@/lib/db/schema";
-import { eq, and, lte, sql, desc } from "drizzle-orm";
-import { loadAllConcepts } from "@/lib/content";
+import { concepts, streaks, stats, dailyPlans } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import Link from "next/link";
-import {
-  Flame,
-  Zap,
-  Trophy,
-  BookOpen,
-  ArrowRight,
-  Target,
-  CheckCircle2,
-  Clock,
-  Lock,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { StatsBar } from "@/components/StatsBar";
+import { PipAvatar } from "@/components/Pip";
+import type { DailyPlan } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
-function parseJsonArray(val: string | null | undefined): string[] {
-  if (!val) return [];
+function parsePlan(raw: string | null | undefined): DailyPlan | null {
+  if (!raw) return null;
   try {
-    const parsed = JSON.parse(val);
-    return Array.isArray(parsed) ? parsed.map(String) : [];
+    return JSON.parse(raw) as DailyPlan;
   } catch {
-    return [];
+    return null;
   }
 }
 
-export default async function DashboardPage() {
-  // Fetch from Turso
+export default async function HomePathPage() {
   const topicId = "system-design";
   const today = new Date().toISOString().split("T")[0];
 
-  const [allConcepts, streakRow, statsRow, recentSessions, dueConcepts] =
-    await Promise.all([
-      db
-        .select()
-        .from(concepts)
-        .where(eq(concepts.topicId, topicId)),
-      db.select().from(streaks).limit(1),
-      db.select().from(stats).limit(1),
-      db
-        .select()
-        .from(sessions)
-        .where(eq(sessions.completed, 1))
-        .orderBy(desc(sessions.completedAt))
-        .limit(5),
-      db
-        .select()
-        .from(concepts)
-        .where(
-          and(
-            eq(concepts.topicId, topicId),
-            sql`(${concepts.status} = 'unseen' OR (${concepts.status} IN ('learning', 'reviewing') AND (${concepts.nextReview} IS NULL OR ${concepts.nextReview} <= ${today})))`
-          )
-        ),
-    ]);
+  const [allConcepts, streakRow, statsRow, planRows] = await Promise.all([
+    db.select().from(concepts).where(eq(concepts.topicId, topicId)),
+    db.select().from(streaks).limit(1),
+    db.select().from(stats).limit(1),
+    db.select().from(dailyPlans).where(eq(dailyPlans.id, today)).limit(1),
+  ]);
 
-  // Also load content for concept titles that may not be in DB yet
-  const contentConcepts = loadAllConcepts();
-
-  const masteredSet = new Set(
-    allConcepts.filter((c) => c.status === "mastered").map((c) => c.id)
-  );
-  const startedSet = new Set(
-    allConcepts
-      .filter((c) => c.status !== "unseen")
-      .map((c) => c.id)
-  );
-
-  const mastered = masteredSet.size;
-  const totalConcepts = Math.max(allConcepts.length, contentConcepts.length);
-  const overallProgress =
-    totalConcepts > 0 ? Math.round((mastered / totalConcepts) * 100) : 0;
   const totalXp = statsRow[0]?.totalXp ?? 0;
-  const level = Math.floor(totalXp / 100) + 1;
-  const xpToNextLevel = 100 - (totalXp % 100);
-  const streak = streakRow[0];
-  const currentStreak = streak?.current ?? 0;
-  const longestStreak = streak?.longest ?? 0;
+  const currentStreak = streakRow[0]?.current ?? 0;
 
-  // Split due concepts into new and review
-  const newDue = dueConcepts.filter((c) => c.status === "unseen");
-  const reviewDue = dueConcepts.filter(
+  const mastered = allConcepts.filter((c) => c.status === "mastered");
+  const learning = allConcepts.filter(
     (c) => c.status === "learning" || c.status === "reviewing"
   );
+  const due = allConcepts.filter(
+    (c) =>
+      (c.status === "learning" || c.status === "reviewing") &&
+      (c.nextReview === null || c.nextReview <= today)
+  );
+  const unseen = allConcepts
+    .filter((c) => c.status === "unseen")
+    .sort((a, b) => a.difficulty - b.difficulty);
 
-  // Build a lookup for concept titles from DB, fallback to content
-  const conceptTitleMap = new Map<string, {
+  const plan = parsePlan(planRows[0]?.planJson);
+
+  // Build path nodes: prefer daily plan, else synthesize from progress
+  type Node = {
+    id: string;
     title: string;
-    difficulty: number;
-    status: string;
-    ef: number;
-    interval: number;
-    repetitions: number;
-    nextReview: string | null;
-    prerequisites: string[];
-  }>();
-  for (const c of allConcepts) {
-    conceptTitleMap.set(c.id, {
-      title: c.title,
-      difficulty: c.difficulty,
-      status: c.status,
-      ef: c.ef,
-      interval: c.interval,
-      repetitions: c.repetitions,
-      nextReview: c.nextReview,
-      prerequisites: parseJsonArray(c.prerequisites),
+    state: "done" | "current" | "locked";
+    kind: "new" | "review" | "chest";
+  };
+
+  let nodes: Node[] = [];
+
+  if (plan?.nodes?.length) {
+    nodes = plan.nodes.map((n, i) => {
+      const c = allConcepts.find((x) => x.id === n.conceptId);
+      let state: Node["state"] = "locked";
+      if (c?.status === "mastered") state = "done";
+      else if (i === 0 || nodes[i - 1]?.state === "done") state = "current";
+      // first incomplete becomes current
+      return {
+        id: n.conceptId,
+        title: n.title,
+        state: "locked",
+        kind: n.kind,
+      };
+    });
+    let foundCurrent = false;
+    nodes = nodes.map((n) => {
+      const c = allConcepts.find((x) => x.id === n.id);
+      if (c?.status === "mastered") return { ...n, state: "done" as const };
+      if (!foundCurrent) {
+        foundCurrent = true;
+        return { ...n, state: "current" as const };
+      }
+      return { ...n, state: "locked" as const };
+    });
+  } else {
+    const pathConcepts = [
+      ...mastered.slice(-2),
+      ...due.slice(0, 2),
+      ...learning.filter((c) => !due.some((d) => d.id === c.id)).slice(0, 1),
+      ...unseen.slice(0, 3),
+    ];
+    // dedupe
+    const seen = new Set<string>();
+    const unique = pathConcepts.filter((c) => {
+      if (seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    });
+
+    let foundCurrent = false;
+    nodes = unique.slice(0, 6).map((c) => {
+      if (c.status === "mastered") {
+        return { id: c.id, title: c.title, state: "done" as const, kind: "new" as const };
+      }
+      if (!foundCurrent) {
+        foundCurrent = true;
+        return {
+          id: c.id,
+          title: c.title,
+          state: "current" as const,
+          kind:
+            c.status === "unseen" ? ("new" as const) : ("review" as const),
+        };
+      }
+      return { id: c.id, title: c.title, state: "locked" as const, kind: "new" as const };
     });
   }
-  for (const c of contentConcepts) {
-    if (!conceptTitleMap.has(c.id)) {
-      conceptTitleMap.set(c.id, {
-        title: c.title,
-        difficulty: c.difficulty,
-        status: "unseen",
-        ef: 2.5,
-        interval: 0,
-        repetitions: 0,
-        nextReview: null,
-        prerequisites: c.prerequisites,
-      });
-    }
+
+  if (nodes.length === 0) {
+    nodes = [
+      {
+        id: "_start",
+        title: "Start learning",
+        state: "current",
+        kind: "new",
+      },
+    ];
   }
 
-  function prereqsReady(prereqs: string[]): boolean {
-    if (prereqs.length === 0) return true;
-    return prereqs.every((p) => masteredSet.has(p) || startedSet.has(p));
-  }
+  const current = nodes.find((n) => n.state === "current");
+  const unitTitle = current?.title ?? "System Design";
+  const doneCount = nodes.filter((n) => n.state === "done").length;
+  const progressPct = Math.round((doneCount / Math.max(nodes.length, 1)) * 100);
 
-  function prereqsMastered(prereqs: string[]): boolean {
-    if (prereqs.length === 0) return true;
-    return prereqs.every((p) => masteredSet.has(p));
-  }
+  const offsets = ["offset-left", "", "offset-right", "", "offset-left", ""] as const;
 
   return (
-    <div className="space-y-6">
-      {/* Hero stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="bg-gradient-to-b from-[#58cc02] to-[#46a302] text-white border-0">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-white/80 text-xs font-medium uppercase tracking-wide">
-              <Flame className="w-4 h-4" />
-              Streak
-            </div>
-            <div className="text-3xl font-bold mt-1">{currentStreak}</div>
-            <div className="text-white/70 text-xs">
-              Best: {longestStreak}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-[#e5e5e5]">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-[#4b4b4b]/70 text-xs font-medium uppercase tracking-wide">
-              <Zap className="w-4 h-4 text-[#ff9600]" />
-              XP
-            </div>
-            <div className="text-3xl font-bold mt-1">{totalXp}</div>
-            <div className="text-xs text-muted-foreground">
-              Level {level} · {xpToNextLevel} XP to next
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-[#e5e5e5]">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-[#4b4b4b]/70 text-xs font-medium uppercase tracking-wide">
-              <Trophy className="w-4 h-4 text-[#ffc800]" />
-              Mastered
-            </div>
-            <div className="text-3xl font-bold mt-1">{mastered}</div>
-            <div className="text-xs text-muted-foreground">
-              of {totalConcepts} concepts
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-[#e5e5e5]">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-[#4b4b4b]/70 text-xs font-medium uppercase tracking-wide">
-              <Target className="w-4 h-4 text-[#1cb0f6]" />
-              Progress
-            </div>
-            <div className="text-3xl font-bold mt-1">{overallProgress}%</div>
-            <Progress value={overallProgress} className="h-1.5 mt-2" />
-          </CardContent>
-        </Card>
+    <div className="min-h-[100dvh] flex flex-col">
+      <div className="sticky top-0 z-20 bg-white border-b-2 border-[#e5e5e5] px-4">
+        <StatsBar streak={currentStreak} xp={totalXp} hearts={5} />
       </div>
 
-      {/* Main action cards */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Card className="border-[#e5e5e5]">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Clock className="w-5 h-5 text-[#ff9600]" />
-              Continue Learning
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dueConcepts.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-[#58cc02]" />
-                <p className="font-medium">All caught up!</p>
-                <p className="text-sm">Nothing due right now.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {dueConcepts.slice(0, 5).map((concept) => {
-                  const isNew = concept.status === "unseen";
-                  const prereqs = parseJsonArray(concept.prerequisites);
-                  const locked = isNew && !prereqsMastered(prereqs);
-                  return (
-                    <div
-                      key={concept.id}
-                      className="flex items-center justify-between py-1.5"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-medium text-sm ${locked ? "text-[#afafaf]" : ""}`}>
-                          {locked && <Lock className="w-3 h-3 inline mr-1" />}
-                          {concept.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {isNew
-                            ? locked
-                              ? `Requires: ${prereqs.filter(p => !masteredSet.has(p)).map(p => conceptTitleMap.get(p)?.title ?? p).join(", ")}`
-                              : "New"
-                            : `${concept.repetitions} reps · ${concept.interval}d interval`}
-                        </p>
-                      </div>
-                      {!locked && (
-                        <Link href={`/session?conceptId=${encodeURIComponent(concept.id)}&mode=learn`}>
-                          <Badge
-                            variant={isNew ? "default" : "secondary"}
-                            className={
-                              isNew
-                                ? "bg-[#1cb0f6] cursor-pointer"
-                                : "bg-[#ff9600]/10 text-[#ff9600] cursor-pointer"
-                            }
-                          >
-                            {isNew ? "Learn" : "Review"}
-                          </Badge>
-                        </Link>
-                      )}
-                    </div>
-                  );
-                })}
-                {dueConcepts.length > 5 && (
-                  <p className="text-xs text-muted-foreground pt-1">
-                    +{dueConcepts.length - 5} more due
-                  </p>
-                )}
-              </div>
-            )}
-            <Link href="/session?mode=learn">
-              <button className="w-full mt-3 flex items-center justify-center gap-2 rounded-xl bg-[#58cc02] hover:bg-[#46a302] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]">
-                Quick Session
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="border-[#e5e5e5]">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <BookOpen className="w-5 h-5 text-[#1cb0f6]" />
-              Learn New Concepts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {newDue.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <Trophy className="w-10 h-10 mx-auto mb-2 text-[#ffc800]" />
-                <p className="font-medium">All concepts started!</p>
-                <p className="text-sm">
-                  {totalConcepts} concepts in your deck.
-                </p>
-              </div>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {newDue.length} new concept{newDue.length > 1 ? "s" : ""}{" "}
-                  ready to learn
-                </p>
-                <div className="space-y-1.5 mb-3">
-                  {newDue.slice(0, 5).map((concept) => {
-                    const prereqs = parseJsonArray(concept.prerequisites);
-                    const ready = prereqsMastered(prereqs);
-                    return (
-                      <div key={concept.id} className="flex items-center gap-2 text-sm py-1">
-                        {ready ? (
-                          <Link
-                            href={`/session?conceptId=${encodeURIComponent(concept.id)}&mode=learn`}
-                            className="flex items-center gap-2 flex-1 hover:text-[#1cb0f6] transition-colors"
-                          >
-                            <BookOpen className="w-3.5 h-3.5 text-[#1cb0f6]" />
-                            <span>{concept.title}</span>
-                            <Badge variant="outline" className="ml-auto text-xs">
-                              Lvl {concept.difficulty}
-                            </Badge>
-                          </Link>
-                        ) : (
-                          <div className="flex items-center gap-2 flex-1 text-[#afafaf]">
-                            <Lock className="w-3.5 h-3.5" />
-                            <span>{concept.title}</span>
-                            <Badge variant="outline" className="ml-auto text-xs border-[#e5e5e5] text-[#afafaf]">
-                              Lvl {concept.difficulty}
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-            {newDue.length > 0 && (
-              <Link href="/session?mode=learn">
-                <button className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#1cb0f6] hover:bg-[#1899d6] text-white font-bold py-3 px-4 text-sm transition-colors shadow-[0_4px_0_#1899d6] active:shadow-none active:translate-y-[2px]">
-                  Start Learning
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </Link>
-            )}
-          </CardContent>
-        </Card>
+      <div className="bg-gradient-to-b from-[#58cc02] to-[#46a302] text-white px-4 py-4">
+        <h1 className="text-xl font-extrabold">System Design</h1>
+        <p className="text-sm text-white/90 font-semibold">
+          Path · {allConcepts.length} concepts · {mastered.length} mastered
+        </p>
       </div>
 
-      {/* Concept progress grid */}
-      <Card className="border-[#e5e5e5]">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">All Concepts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-            {contentConcepts.map((concept) => {
-              const dbConcept = conceptTitleMap.get(concept.id);
-              const status = dbConcept?.status ?? "unseen";
-              const ef = dbConcept?.ef ?? 2.5;
-              const interval = dbConcept?.interval ?? 0;
-              const reps = dbConcept?.repetitions ?? 0;
-              const nextReview = dbConcept?.nextReview ?? null;
-              const isMastered = status === "mastered";
-              const isLearning = status === "learning" || status === "reviewing";
-              const isDue =
-                isLearning && (nextReview === null || nextReview <= today);
-
-              const prereqs = dbConcept?.prerequisites ?? [];
-              const locked = status === "unseen" && !prereqsReady(prereqs);
-
-              return (
-                <Link
-                  key={concept.id}
-                  href={locked ? "#" : `/session?conceptId=${encodeURIComponent(concept.id)}&mode=learn`}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors group ${
-                    locked ? "opacity-50 cursor-not-allowed" : "hover:bg-[#f0f0f0]"
-                  }`}
-                  onClick={locked ? (e) => e.preventDefault() : undefined}
-                >
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      isMastered
-                        ? "bg-[#ffc800]"
-                        : isLearning
-                        ? "bg-[#1cb0f6]"
-                        : locked
-                        ? "bg-[#e5e5e5]"
-                        : "bg-[#e5e5e5]"
-                    }`}
-                  >
-                    {isMastered ? (
-                      <CheckCircle2 className="w-4 h-4 text-white" />
-                    ) : isLearning ? (
-                      <Zap className="w-3.5 h-3.5 text-white" />
-                    ) : locked ? (
-                      <Lock className="w-3.5 h-3.5 text-[#afafaf]" />
-                    ) : (
-                      <BookOpen className="w-3.5 h-3.5 text-[#afafaf]" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {concept.title}
-                    </p>
-                    {reps > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        {isMastered
-                          ? `Mastered · ${interval}d interval`
-                          : `${reps} reps · EF ${ef}`}
-                      </p>
-                    )}
-                  </div>
-                  {isDue && (
-                    <Badge className="bg-[#ff4b4b] text-white text-xs flex-shrink-0">
-                      Due
-                    </Badge>
-                  )}
-                  <ArrowRight className="w-3.5 h-3.5 text-[#afafaf] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                </Link>
-              );
-            })}
+      <div className="mx-4 -mt-2 mb-2 bg-white border-2 border-[#e5e5e5] rounded-2xl p-3.5 flex items-center gap-3 shadow-sm">
+        <div className="w-12 h-12 rounded-xl bg-[#d7ffb8] grid place-items-center text-2xl flex-shrink-0">
+          ⚡
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[0.7rem] font-extrabold uppercase tracking-wide text-[#777]">
+            Today · focus
           </div>
-        </CardContent>
-      </Card>
+          <div className="font-extrabold truncate">{unitTitle}</div>
+          <div className="h-2.5 bg-[#e5e5e5] rounded-full mt-1.5 overflow-hidden">
+            <div
+              className="h-full bg-[#58cc02] rounded-full"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+        </div>
+      </div>
 
-      {/* Recent sessions */}
-      {recentSessions.length > 0 && (
-        <Card className="border-[#e5e5e5]">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Recent Sessions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {recentSessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="flex items-center justify-between text-sm"
+      <div className="relative flex-1 px-4 pt-6 pb-28">
+        <div className="absolute left-1/2 top-8 bottom-32 w-1 -translate-x-1/2 bg-[#d4d4d4] rounded" />
+
+        <div className="relative flex flex-col items-center gap-10">
+          {nodes.map((node, i) => {
+            const offset = offsets[i % offsets.length];
+            const align =
+              offset === "offset-left"
+                ? "self-start ml-[12%]"
+                : offset === "offset-right"
+                  ? "self-end mr-[12%]"
+                  : "self-center";
+
+            const base =
+              "relative z-10 w-[70px] h-[70px] rounded-full grid place-items-center text-2xl border-0 font-bold";
+            const styles =
+              node.state === "done"
+                ? "bg-[#ffc800] shadow-[0_6px_0_#e5a500] text-white"
+                : node.state === "current"
+                  ? "bg-[#58cc02] shadow-[0_6px_0_#46a302] text-white animate-pulse"
+                  : "bg-[#e5e5e5] shadow-[0_6px_0_#c4c4c4] text-[#aaa]";
+
+            const icon =
+              node.state === "done"
+                ? "⭐"
+                : node.state === "current"
+                  ? "📖"
+                  : node.kind === "chest"
+                    ? "🏆"
+                    : "🔒";
+
+            const href =
+              node.state === "locked"
+                ? "#"
+                : node.id === "_start"
+                  ? "/session?mode=learn"
+                  : `/session?conceptId=${encodeURIComponent(node.id)}&mode=learn`;
+
+            const inner = (
+              <>
+                <span className={`${base} ${styles}`}>{icon}</span>
+                <span
+                  className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap text-[0.7rem] font-extrabold ${
+                    node.state === "current" ? "text-[#46a302]" : "text-[#777]"
+                  }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-[#58cc02]" />
-                    <span>
-                      {session.completedAt
-                        ? new Date(session.completedAt).toLocaleDateString(
-                            "en-US",
-                            {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-muted-foreground">
-                    <span>{session.totalQuestions} questions</span>
-                    <span className="text-[#58cc02] font-medium">
-                      +{session.xpEarned} XP
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                  {node.title.length > 18
+                    ? node.title.slice(0, 16) + "…"
+                    : node.title}
+                </span>
+              </>
+            );
+
+            return node.state === "locked" ? (
+              <div key={node.id + i} className={`relative ${align}`}>
+                {inner}
+              </div>
+            ) : (
+              <Link key={node.id + i} href={href} className={`relative ${align}`}>
+                {inner}
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="fixed bottom-24 right-4 z-30 flex items-end gap-2 max-w-[200px]">
+          <div className="bg-white border-2 border-[#e5e5e5] rounded-2xl px-3 py-2 text-xs font-bold shadow-md leading-snug">
+            {current
+              ? `Tap the green node — options only. Pip’s got you.`
+              : `All caught up. Capture notes in Digest for tonight.`}
+          </div>
+          <PipAvatar size="md" />
+        </div>
+      </div>
+
+      <div className="fixed bottom-[4.5rem] inset-x-0 z-20 px-4 max-w-lg mx-auto">
+        <Link
+          href={
+            current && current.id !== "_start"
+              ? `/session?conceptId=${encodeURIComponent(current.id)}&mode=learn`
+              : "/session?mode=learn"
+          }
+          className="block w-full text-center rounded-2xl bg-[#58cc02] hover:bg-[#46a302] text-white font-extrabold py-3.5 uppercase tracking-wide shadow-[0_4px_0_#46a302] active:shadow-none active:translate-y-[2px]"
+        >
+          Start lesson
+        </Link>
+      </div>
     </div>
   );
 }

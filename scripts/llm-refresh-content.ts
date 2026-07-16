@@ -3,7 +3,8 @@ import path from "path";
 import { execSync } from "child_process";
 import OpenAI from "openai";
 
-const CONTENT_DIR = path.join(process.cwd(), "content", "system-design");
+import { getContentDir } from "../src/lib/paths";
+const CONTENT_DIR = getContentDir("system-design");
 const MAX_CHANGES = 5;
 const DRY_RUN = process.argv.includes("--dry-run");
 

@@ -5,7 +5,8 @@
 import fs from "fs";
 import path from "path";
 
-const CONTENT_DIR = path.join(process.cwd(), "content", "system-design");
+import { getContentDir } from "../src/lib/paths";
+const CONTENT_DIR = getContentDir("system-design");
 
 interface QuestionDef {
   type: "multiple-choice" | "fill-in-blank" | "select-all" | "order";

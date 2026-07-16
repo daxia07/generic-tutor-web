@@ -43,3 +43,11 @@ next-env.d.ts
 # user progress data
 /data
 .deveco/
+
+# Content lives outside git: ~/workspace/generic-tutor-web (TUTOR_DATA_DIR)
+/content/**
+!/content/README.md
+/design-mocks/
+
+# Local overnight wrapper logs are under /tmp; never commit secrets
+.env.local

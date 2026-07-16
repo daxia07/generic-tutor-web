@@ -6,8 +6,11 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import type { Concept, Question, QuestionType } from "./types";
+import { getContentDir } from "./paths";
 
-const CONTENT_DIR = path.join(process.cwd(), "content", "system-design");
+function contentDir(): string {
+  return getContentDir("system-design");
+}
 
 /**
  * Parse a single concept markdown file.
@@ -42,19 +45,20 @@ export function loadConcept(filePath: string): Concept {
  * Load all concepts from the content directory.
  */
 export function loadAllConcepts(): Concept[] {
-  if (!fs.existsSync(CONTENT_DIR)) {
-    console.warn(`Content directory not found: ${CONTENT_DIR}`);
+  const dir = contentDir();
+  if (!fs.existsSync(dir)) {
+    console.warn(`Content directory not found: ${dir}`);
     return [];
   }
 
   const files = fs
-    .readdirSync(CONTENT_DIR)
+    .readdirSync(dir)
     .filter((f) => f.endsWith(".md"));
 
   return files
     .map((f) => {
       try {
-        return loadConcept(path.join(CONTENT_DIR, f));
+        return loadConcept(path.join(dir, f));
       } catch (err) {
         console.warn(`Failed to parse ${f}:`, err);
         return null;
@@ -67,7 +71,7 @@ export function loadAllConcepts(): Concept[] {
  * Get a single concept by ID.
  */
 export function getConcept(id: string): Concept | null {
-  const filePath = path.join(CONTENT_DIR, `${id}.md`);
+  const filePath = path.join(contentDir(), `${id}.md`);
   if (!fs.existsSync(filePath)) return null;
   return loadConcept(filePath);
 }
@@ -76,11 +80,17 @@ export function getConcept(id: string): Concept | null {
  * Get all concept IDs (for initializing new learners).
  */
 export function getAllConceptIds(): string[] {
-  if (!fs.existsSync(CONTENT_DIR)) return [];
+  const dir = contentDir();
+  if (!fs.existsSync(dir)) return [];
   return fs
-    .readdirSync(CONTENT_DIR)
+    .readdirSync(dir)
     .filter((f) => f.endsWith(".md"))
     .map((f) => path.basename(f, ".md"));
+}
+
+/** Absolute content directory (for scripts). */
+export function getSystemDesignContentDir(): string {
+  return contentDir();
 }
 
 // ---------------------------------------------------------------------------
